@@ -1,0 +1,36 @@
+# Environment variables
+.env
+
+# Dependencies
+node_modules/
+
+# Build output
+build/
+dist/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Session storage
+.ifs-mcp/
+
+# One-off dev/reference files
+ifs_projections/
+parse-swagger.cjs
+login-preview.html
+nul
+
+# Deleted one-off docs
+QUICK_REPORTS_API.md
+QUICK_REPORTS_GET_ENDPOINTS.md
