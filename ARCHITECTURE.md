@@ -29,24 +29,23 @@
         └────────────────────────┘          └───────────────────────────┘
                     │                                    │
                     │                        ┌───────────▼───────────────┐
-                    │                        │   Tool Request Handler    │
-                    │                        │  • ListTools              │
-                    │                        │  • CallTool               │
+                    │                        │     Request Handlers      │
+                    │                        │  • ListTools / CallTool   │
+                    │                        │  • ListResources / Read   │
                     │                        └───────────┬───────────────┘
                     │                                    │
                     │                        ┌───────────▼───────────────┐
-                    │                        │    Tool Registry          │
+                    │                        │  Tool Registry            │
                     │                        │  ┌─────────────────────┐  │
-                    │                        │  │ Auth:               │  │
                     │                        │  │  start_oauth        │  │
                     │                        │  │  get_session_info   │  │
-                    │                        │  │ API:                │  │
                     │                        │  │  call_protected_api │  │
-                    │                        │  │ IFS Quick Reports:  │  │
-                    │                        │  │  search_quick_rpts  │  │
-                    │                        │  │  get_report_params  │  │
-                    │                        │  │  execute_quick_rpt  │  │
-                    │                        │  │  list_report_cats   │  │
+                    │                        │  └─────────────────────┘  │
+                    │                        │                           │
+                    │                        │  Resource Registry        │
+                    │                        │  ┌─────────────────────┐  │
+                    │                        │  │  ifs://quick-reports│  │
+                    │                        │  │    /guide (.md)     │  │
                     │                        │  └─────────────────────┘  │
                     │                        └───────────┬───────────────┘
                     │                                    │
@@ -92,7 +91,7 @@
 Application bootstrap: loads env vars, initializes OAuthManager, restores saved sessions, starts Express (port 3000) and MCP (stdio) servers concurrently.
 
 ### 2. MCP Server (`src/server/mcp-server.ts`)
-MCP protocol handler. Registers tool definitions, routes tool calls to handlers, passes OAuthManager to all tools.
+MCP protocol handler. Registers tool definitions and resource definitions. Routes tool calls to handlers, serves resource content on read requests.
 
 ### 3. OAuth Callback Server (`src/server/oauth-callback-server.ts`)
 Express server on `http://localhost:3000`. Handles `/oauth/callback` redirects, exchanges auth codes for tokens, saves sessions to disk.
@@ -113,17 +112,22 @@ All config via environment variables (see `CONFIGURATION.md`):
 `API_BASE_URL`, `OAUTH_REALM`, `OAUTH_CLIENT_ID`, `OAUTH_CLIENT_SECRET`
 
 ### 7. Tools
-See `IFS_TOOLS_SUMMARY.md` for detailed tool documentation.
 
 | Tool | Category | Description |
 |------|----------|-------------|
 | `start_oauth` | Auth | Initiate OAuth flow |
 | `get_session_info` | Auth | Check session status |
 | `call_protected_api` | API | Generic authenticated API calls |
-| `search_quick_reports` | IFS | Search reports by description |
-| `get_report_parameters` | IFS | Get required report parameters |
-| `execute_quick_report` | IFS | Execute a report |
-| `list_report_categories` | IFS | List report categories |
+
+### 8. Resources
+
+MCP resources provide API guides as markdown that Claude reads to learn how to construct `call_protected_api` calls for specific IFS projections.
+
+| Resource | URI | Description |
+|----------|-----|-------------|
+| IFS Quick Reports | `ifs://quick-reports/guide` | Search, list, get parameters, execute Quick Reports |
+
+Resources are registered in `src/resources/index.ts`. Each resource has a `definition` + `handler`, mirroring the tool pattern. Add new `.md` files to `src/resources/` and register them to extend the server.
 
 ## Data Flow
 
@@ -147,7 +151,8 @@ LLM ──tool call──> MCP Server ──get session──> Session Manager
 2. **Session Persistence** - Sessions survive restarts via `~/.ifs-mcp/session.json`. LLM doesn't need to track session IDs.
 3. **Automatic Token Refresh** - Transparent to LLM. 5-minute expiry buffer in `getAccessToken()`.
 4. **Modular Tool Design** - Each tool exports `definition` + `handler`. Registered in `tools/index.ts`.
-5. **Security** - PKCE, CSRF state parameter, secrets in env vars, tokens stored locally.
+5. **Resource-Driven API Knowledge** - Instead of hardcoding tools per endpoint, API guides (markdown) teach the LLM how to use `call_protected_api`. Users can add new guides without code changes.
+6. **Security** - PKCE, CSRF state parameter, secrets in env vars, tokens stored locally.
 
 ## File Structure
 ```
@@ -163,7 +168,8 @@ src/
 ├── prompts/
 │   └── index.ts                      # MCP prompts (placeholder)
 ├── resources/
-│   └── index.ts                      # MCP resources (placeholder)
+│   ├── index.ts                      # Resource registry
+│   └── ifs-quick-reports.md          # Quick Reports API guide
 ├── server/
 │   ├── mcp-server.ts                 # MCP protocol handler
 │   └── oauth-callback-server.ts      # Express OAuth callback
@@ -172,13 +178,8 @@ src/
     ├── auth/
     │   ├── start-oauth.ts            # Start OAuth flow
     │   └── get-session-info.ts       # Check session status
-    ├── api/
-    │   └── call-protected-api.ts     # Generic API calls
-    └── ifs-quick-reports/
-        ├── search-quick-reports.ts   # Search reports by description
-        ├── get-report-parameters.ts  # Get report parameter definitions
-        ├── execute-quick-report.ts   # Execute a report
-        └── list-report-categories.ts # List report categories
+    └── api/
+        └── call-protected-api.ts     # Generic API calls
 ```
 
 ## Dependencies

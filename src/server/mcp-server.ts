@@ -3,9 +3,12 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { OAuthManager } from "../lib/auth/oauth-manager.js";
 import { tools } from "../tools/index.js";
+import { resources } from "../resources/index.js";
 
 export class OAuthMCPServer {
   private server: Server;
@@ -21,6 +24,7 @@ export class OAuthMCPServer {
       {
         capabilities: {
           tools: {},
+          resources: {},
         },
       }
     );
@@ -46,6 +50,23 @@ export class OAuthMCPServer {
 
       // Pass oauthManager to all tools (some need it, others ignore it)
       return await tool.handler(args, this.oauthManager);
+    });
+
+    // List available resources
+    this.server.setRequestHandler(ListResourcesRequestSchema, async () => ({
+      resources: resources.map((r) => r.definition),
+    }));
+
+    // Read a specific resource
+    this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+      const { uri } = request.params;
+      const resource = resources.find((r) => r.definition.uri === uri);
+
+      if (!resource) {
+        throw new Error(`Unknown resource: ${uri}`);
+      }
+
+      return await resource.handler(uri);
     });
   }
 

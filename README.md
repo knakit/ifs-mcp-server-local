@@ -1,11 +1,13 @@
 # IFS MCP Server
 
-A Model Context Protocol (MCP) server that connects Claude Desktop to IFS Cloud Quick Reports via OAuth 2.0 authentication.
+A Model Context Protocol (MCP) server that provides authenticated access to IFS Cloud APIs via OAuth 2.0. Uses a resource-driven architecture where API guides teach Claude how to construct calls using a single generic tool.
 
 ## Features
 
 - Authenticates with IFS Cloud using OAuth 2.0 + PKCE
-- Exposes IFS Quick Reports as MCP tools that Claude can call directly
+- Generic `call_protected_api` tool for any IFS endpoint
+- MCP resources provide API guides (e.g., IFS Quick Reports) that Claude reads to construct correct calls
+- Extensible: add your own resource guides for other IFS projections
 - Persists sessions across restarts so you only authenticate once
 
 ## Prerequisites
@@ -108,10 +110,22 @@ A Model Context Protocol (MCP) server that connects Claude Desktop to IFS Cloud 
 | `start_oauth` | Initiate OAuth login flow |
 | `get_session_info` | Check current session status |
 | `call_protected_api` | Make authenticated API calls to any IFS endpoint |
-| `search_quick_reports` | Search reports by description |
-| `get_report_parameters` | Get required parameters for a report |
-| `execute_quick_report` | Execute a report with parameters |
-| `list_report_categories` | List available report categories |
+
+## Resources
+
+Resources are API guides that Claude reads to learn how to use `call_protected_api` for specific IFS projections.
+
+| Resource | URI | Description |
+|----------|-----|-------------|
+| IFS Quick Reports | `ifs://quick-reports/guide` | Search, list, execute Quick Reports via OData |
+
+### Adding Your Own Resources
+
+To add a guide for another IFS projection:
+
+1. Create a markdown file in `src/resources/` (e.g., `purchase-orders.md`)
+2. Register it in `src/resources/index.ts` with a `ifs://` URI
+3. Rebuild with `npm run build`
 
 ## Environment Variables
 
