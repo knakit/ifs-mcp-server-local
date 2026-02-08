@@ -1,5 +1,11 @@
 # IFS MCP Server
 
+[![MCP](https://badge.mcpx.dev?type=server)](https://modelcontextprotocol.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
+[![IFS Cloud](https://img.shields.io/badge/IFS_Cloud-OAuth_2.0-orange.svg)](https://www.ifs.com/)
+
 A Model Context Protocol (MCP) server that provides authenticated access to IFS Cloud APIs via OAuth 2.0. Uses a resource-driven architecture where API guides teach Claude how to construct calls using a single generic tool.
 
 ## Features
