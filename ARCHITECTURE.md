@@ -41,6 +41,7 @@
                     │                        │  │  get_session_info   │  │
                     │                        │  │  call_protected_api │  │
                     │                        │  │  get_api_guide      │  │
+                    │                        │  │  export_api_data    │  │
                     │                        │  └─────────────────────┘  │
                     │                        │                           │
                     │                        │  Resource Registry        │
@@ -120,6 +121,7 @@ All config via environment variables (see `CONFIGURATION.md`):
 | `get_session_info` | Auth | Check session status |
 | `call_protected_api` | API | Generic authenticated API calls |
 | `get_api_guide` | API | Retrieve API guide for a specific IFS projection |
+| `export_api_data` | API | Export large result sets to CSV with automatic pagination |
 
 ### 8. Resources
 
@@ -129,7 +131,7 @@ MCP resources provide API guides as markdown that Claude reads to learn how to c
 |----------|-----|-------------|
 | IFS Quick Reports | `ifs://quick-reports/guide` | Search, list, get parameters, execute Quick Reports |
 
-Resources are registered in `src/resources/index.ts`. Each resource has a `definition` + `handler`, mirroring the tool pattern. Add new `.md` files to `src/resources/` and register them to extend the server.
+Resources are auto-discovered from `.md` files in `src/resources/`. Metadata is derived from file content: `# Heading` becomes the name, first paragraph becomes the description, filename becomes the URI slug. Drop a new `.md` file and rebuild — no code changes needed.
 
 ## Data Flow
 
@@ -182,7 +184,8 @@ src/
     │   └── get-session-info.ts       # Check session status
     └── api/
         ├── call-protected-api.ts     # Generic API calls
-        └── get-api-guide.ts          # Retrieve API guides from resources
+        ├── get-api-guide.ts          # Retrieve API guides from resources
+        └── export-api-data.ts        # Paginated CSV export
 ```
 
 ## Dependencies

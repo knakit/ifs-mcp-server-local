@@ -10,37 +10,64 @@ export interface MCPResource {
   handler: (uri: string) => Promise<ReadResourceResult>;
 }
 
-function loadMarkdownResource(filename: string): string {
+function getResourceDirs(): string[] {
+  const dirs: string[] = [];
   // Check build directory first, then source directory
-  const buildPath = path.join(__dirname, filename);
-  const srcPath = path.resolve(__dirname, "..", "..", "src", "resources", filename);
-
-  if (fs.existsSync(buildPath)) {
-    return fs.readFileSync(buildPath, "utf-8");
-  }
-  if (fs.existsSync(srcPath)) {
-    return fs.readFileSync(srcPath, "utf-8");
-  }
-  return `Resource file ${filename} not found`;
+  if (fs.existsSync(__dirname)) dirs.push(__dirname);
+  const srcPath = path.resolve(__dirname, "..", "..", "src", "resources");
+  if (srcPath !== __dirname && fs.existsSync(srcPath)) dirs.push(srcPath);
+  return dirs;
 }
 
-const ifsQuickReports: MCPResource = {
-  definition: {
-    uri: "ifs://quick-reports/guide",
-    name: "IFS Quick Reports API Guide",
-    description:
-      "Guide for using call_protected_api to search, list, get parameters for, and execute IFS Cloud Quick Reports via OData endpoints",
-    mimeType: "text/markdown",
-  },
-  handler: async (uri: string) => ({
-    contents: [
-      {
-        uri,
-        mimeType: "text/markdown",
-        text: loadMarkdownResource("ifs-quick-reports.md"),
-      },
-    ],
-  }),
-};
+function discoverMarkdownFiles(): Map<string, string> {
+  const files = new Map<string, string>(); // filename -> full path
+  for (const dir of getResourceDirs()) {
+    for (const file of fs.readdirSync(dir)) {
+      if (file.endsWith(".md") && !files.has(file)) {
+        files.set(file, path.join(dir, file));
+      }
+    }
+  }
+  return files;
+}
 
-export const resources: MCPResource[] = [ifsQuickReports];
+function parseMetadata(content: string, filename: string): { name: string; description: string; slug: string } {
+  const lines = content.split("\n");
+
+  // Name from first # heading, fallback to filename
+  const headingLine = lines.find((l) => l.startsWith("# "));
+  const name = headingLine ? headingLine.replace(/^#\s+/, "").trim() : filename.replace(".md", "");
+
+  // Description from first non-empty, non-heading line
+  const descLine = lines.find((l) => l.trim() !== "" && !l.startsWith("#"));
+  const description = descLine ? descLine.trim().replace(/[`*_]/g, "") : name;
+
+  // URI slug from filename: "ifs-quick-reports.md" -> "ifs-quick-reports"
+  const slug = filename.replace(".md", "");
+
+  return { name, description, slug };
+}
+
+function buildResource(filename: string, filePath: string): MCPResource {
+  const content = fs.readFileSync(filePath, "utf-8");
+  const { name, description, slug } = parseMetadata(content, filename);
+  const uri = `ifs://${slug}/guide`;
+
+  return {
+    definition: { uri, name, description, mimeType: "text/markdown" },
+    handler: async (requestUri: string) => ({
+      contents: [
+        {
+          uri: requestUri,
+          mimeType: "text/markdown",
+          text: fs.readFileSync(filePath, "utf-8"),
+        },
+      ],
+    }),
+  };
+}
+
+const discovered = discoverMarkdownFiles();
+export const resources: MCPResource[] = Array.from(discovered.entries()).map(
+  ([filename, filePath]) => buildResource(filename, filePath)
+);

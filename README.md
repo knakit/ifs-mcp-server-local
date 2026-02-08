@@ -111,6 +111,7 @@ A Model Context Protocol (MCP) server that provides authenticated access to IFS 
 | `get_session_info` | Check current session status |
 | `call_protected_api` | Make authenticated API calls to any IFS endpoint |
 | `get_api_guide` | Retrieve API guide for a specific IFS projection |
+| `export_api_data` | Export large result sets to CSV with automatic pagination |
 
 ## Resources
 
@@ -125,8 +126,12 @@ Resources are API guides that Claude reads to learn how to use `call_protected_a
 To add a guide for another IFS projection:
 
 1. Create a markdown file in `src/resources/` (e.g., `purchase-orders.md`)
-2. Register it in `src/resources/index.ts` with a `ifs://` URI
-3. Rebuild with `npm run build`
+   - Start with a `# Heading` (becomes the resource name)
+   - First paragraph becomes the description
+   - Filename becomes the URI slug (e.g., `purchase-orders.md` → `ifs://purchase-orders/guide`)
+2. Rebuild with `npm run build`
+
+Resources are auto-discovered — no code changes needed.
 
 ## Environment Variables
 

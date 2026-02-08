@@ -1,11 +1,7 @@
 # IFS Quick Reports API Guide
 
 Use the `call_protected_api` tool with the endpoints below to work with IFS Quick Reports.
-All endpoints use **GET** method. The base path for all endpoints is:
-
-```
-/main/ifsapplications/projection/v1/
-```
+All endpoints use **GET** method.
 
 ## 1. Search Quick Reports
 
@@ -114,19 +110,4 @@ Run a report with parameters and get results.
 
 > Before executing, consider adding `$count=true` to check the result size. If results exceed 10 records, confirm with the user before fetching all data.
 
-## OData Quick Reference
-
-| Operation | Syntax | Example |
-|-----------|--------|---------|
-| Starts with (case-insensitive) | `((startswith(tolower(Field),'text')))` | `((startswith(tolower(Description),'sales')))` |
-| Contains | `contains(Field,'text')` | `contains(Description,'order')` |
-| Equals | `Field eq 'value'` | `CategoryId eq 'SALES'` |
-| Not equals | `Field ne 'value'` | `Status ne 'CLOSED'` |
-| Greater than | `Field gt value` | `Amount gt 1000` |
-| AND | `expr1 and expr2` | `Status eq 'OPEN' and Amount gt 100` |
-| OR | `expr1 or expr2` | `Status eq 'OPEN' or Status eq 'NEW'` |
-| Order ascending | `$orderby=Field asc` | `$orderby=QuickReportId asc` |
-| Order descending | `$orderby=Field desc` | `$orderby=ModifiedDate desc` |
-| Limit results | `$top=N` | `$top=10` |
-| Skip results | `$skip=N` | `$skip=20` |
-| Select fields | `$select=F1,F2` | `$select=QuickReportId,Description` |
+For OData query syntax, use `get_api_guide({ guide: "ifs-odata-reference" })`.

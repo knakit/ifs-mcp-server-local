@@ -38,6 +38,16 @@ get_api_guide({ guide: "quick-reports" }) // Get the Quick Reports guide
 
 **Inputs:** `guide` (optional — lists available guides if omitted)
 
+### 5. export_api_data
+Export large API result sets to a CSV file. Fetches data in batches of 100 records using `$top`/`$skip` pagination and saves to `~/.ifs-mcp/exports/`.
+
+```
+export_api_data({ endpoint: "/main/ifsapplications/...", method: "GET" })
+export_api_data({ endpoint: "/main/ifsapplications/...", method: "GET", filename: "sales-reports" })
+```
+
+**Inputs:** `endpoint` (required), `method` (required), `filename` (optional), `sessionId`, `body`
+
 ## Resources
 
 Resources are API guides that Claude reads to learn how to construct `call_protected_api` calls for specific IFS projections.
@@ -49,8 +59,11 @@ Resources are API guides that Claude reads to learn how to construct `call_prote
 ### Adding New Resources
 
 1. Create a markdown file in `src/resources/` describing the API endpoints
-2. Register it in `src/resources/index.ts` with a `ifs://` URI
-3. Rebuild with `npm run build`
+   - Start with a `# Heading` (becomes the resource name)
+   - First paragraph becomes the description
+2. Rebuild with `npm run build`
+
+Resources are auto-discovered from `.md` files — no code changes needed.
 
 ## Authentication
 
