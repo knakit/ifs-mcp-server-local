@@ -40,6 +40,7 @@
                     │                        │  │  start_oauth        │  │
                     │                        │  │  get_session_info   │  │
                     │                        │  │  call_protected_api │  │
+                    │                        │  │  get_api_guide      │  │
                     │                        │  └─────────────────────┘  │
                     │                        │                           │
                     │                        │  Resource Registry        │
@@ -118,6 +119,7 @@ All config via environment variables (see `CONFIGURATION.md`):
 | `start_oauth` | Auth | Initiate OAuth flow |
 | `get_session_info` | Auth | Check session status |
 | `call_protected_api` | API | Generic authenticated API calls |
+| `get_api_guide` | API | Retrieve API guide for a specific IFS projection |
 
 ### 8. Resources
 
@@ -179,7 +181,8 @@ src/
     │   ├── start-oauth.ts            # Start OAuth flow
     │   └── get-session-info.ts       # Check session status
     └── api/
-        └── call-protected-api.ts     # Generic API calls
+        ├── call-protected-api.ts     # Generic API calls
+        └── get-api-guide.ts          # Retrieve API guides from resources
 ```
 
 ## Dependencies
@@ -190,4 +193,5 @@ src/
 | `express` | OAuth callback HTTP server |
 | `axios` | HTTP client for API calls |
 | `dotenv` | Environment variable management |
+| `zod` | Schema validation |
 | `crypto` | PKCE generation (Node.js built-in) |

@@ -28,6 +28,16 @@ call_protected_api({ endpoint: "/main/ifsapplications/...", method: "POST", body
 **Inputs:** `endpoint` (required), `method` (required), `body`, `sessionId`
 **Methods:** GET, POST, PUT, DELETE, PATCH
 
+### 4. get_api_guide
+Retrieve an API guide for a specific IFS projection. Call this before using `call_protected_api` to learn the correct endpoints and OData syntax.
+
+```
+get_api_guide()                          // List available guides
+get_api_guide({ guide: "quick-reports" }) // Get the Quick Reports guide
+```
+
+**Inputs:** `guide` (optional — lists available guides if omitted)
+
 ## Resources
 
 Resources are API guides that Claude reads to learn how to construct `call_protected_api` calls for specific IFS projections.

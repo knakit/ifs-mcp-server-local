@@ -44,20 +44,11 @@ You can also set environment variables:
 
 **Command Line:**
 ```bash
-API_BASE_URL=https://prod.ifs.cloud npm start
+API_BASE_URL=https://prod.ifs.cloud node build/index.js
 ```
 
 **Shell Export:**
 ```bash
 export API_BASE_URL=https://prod.ifs.cloud
-npm start
-```
-
-**Package.json Scripts:**
-```json
-{
-  "scripts": {
-    "start:prod": "API_BASE_URL=https://prod.ifs.cloud npm start"
-  }
-}
+node build/index.js
 ```

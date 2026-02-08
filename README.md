@@ -110,6 +110,7 @@ A Model Context Protocol (MCP) server that provides authenticated access to IFS 
 | `start_oauth` | Initiate OAuth login flow |
 | `get_session_info` | Check current session status |
 | `call_protected_api` | Make authenticated API calls to any IFS endpoint |
+| `get_api_guide` | Retrieve API guide for a specific IFS projection |
 
 ## Resources
 
