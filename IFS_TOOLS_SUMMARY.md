@@ -74,16 +74,30 @@ save_skill({ filename: "ifs-purchase-orders.md", content: "# Purchase Orders\n..
 Prompts are guided workflows available in Claude Desktop's `+` menu. They set up a structured conversation with instructions and context already loaded.
 
 ### build_ifs_guide
-Build a new IFS skill from real browser traffic. Parses a HAR file, then walks through a guided conversation to capture business context before drafting the guide.
+Build a new IFS skill from browser traffic, a downloaded OpenAPI spec, or by fetching the spec live from IFS. Walks through a guided conversation to capture business context before drafting the guide. Provide exactly one of the three arguments below.
 
-**Argument:** `har_file_path` — absolute path to a `.har` file exported from browser DevTools
+**Arguments (provide exactly one):**
+- `har_file_path` — absolute path to a `.har` file exported from browser DevTools (best for transactional workflows)
+- `openapi_file_path` — absolute path to a downloaded Swagger/OpenAPI JSON file (best for master data)
+- `projection_name` — projection service name to fetch the OpenAPI spec live (e.g. `CustomerHandling`); requires an active authenticated session
 
-**Workflow:**
+**HAR workflow:**
 
 1. **Capture** — Use IFS Cloud in your browser. In DevTools (F12), go to Network tab, right-click → *Save all as HAR with content*.
-2. **Refine** — Open `build_ifs_guide` from the `+` menu, provide the HAR path. Claude summarises what it found and asks what each operation means in your workflow.
-3. **Make** — Claude drafts the guide, asks for a filename, and saves it via `save_skill`. When updating an existing skill, a change summary is shown automatically.
+2. **Refine** — Open `build_ifs_guide` with `har_file_path`. Claude summarises operations found and asks what each means in your workflow.
+3. **Make** — Claude drafts the guide, asks for a filename, and saves it via `save_skill`. Change summary shown automatically when updating.
 4. **Use** — The skill is available immediately via `get_api_guide` — no restart needed.
+
+**OpenAPI workflow (live fetch):**
+
+1. **Fetch** — Open `build_ifs_guide` with `projection_name=CustomerHandling`. Claude calls `call_protected_api` to fetch the spec from `/$openapi?V2`.
+2. **Refine** — Claude extracts entity sets, operations, and field schemas, then asks which operations you need and what field names mean.
+3. **Make** — Claude drafts the guide, asks for a filename, and saves it via `save_skill`.
+4. **Use** — Available immediately.
+
+**OpenAPI workflow (local file):**
+
+Same as live fetch, but provide `openapi_file_path` instead. Download the spec from `{server}/main/ifsapplications/projection/v1/{ServiceName}.svc/$openapi?V2` first.
 
 ## Resources
 

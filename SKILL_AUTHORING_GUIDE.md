@@ -15,13 +15,35 @@ This guide walks you through creating a skill from scratch — no technical know
 
 ---
 
+## Which Method Should I Use?
+
+There are two ways to build a skill. Choose the one that fits your workflow:
+
+| Method | Best for | What you provide |
+|--------|----------|-----------------|
+| **HAR recording** | Transactional workflows — orders, approvals, multi-step processes | A `.har` file captured from browser DevTools |
+| **OpenAPI spec** | Master data — customers, suppliers, parts, sites | The projection service name (live fetch) or a downloaded spec file |
+
+**Use HAR** when the workflow involves specific sequences of actions (e.g. create header → add lines → release order). The recording captures exactly what your users do and with which fields.
+
+**Use OpenAPI** when you want to document the full CRUD surface of a master data entity and don't need to record a specific workflow first. The spec tells you every available operation and every field.
+
+---
+
 ## How It Works
 
-The process has four steps:
-
+**HAR path:**
 ```
 1. CAPTURE   →   Record your actions in IFS using browser developer tools
 2. REFINE    →   Claude reviews the recording and asks you to explain each step
+3. MAKE      →   Claude drafts the skill file and saves it automatically
+4. USE       →   The skill is immediately available — ask Claude to use it
+```
+
+**OpenAPI path:**
+```
+1. FETCH     →   Claude fetches the projection spec from IFS (or you provide a local file)
+2. REFINE    →   Claude asks which operations you need and what fields mean
 3. MAKE      →   Claude drafts the skill file and saves it automatically
 4. USE       →   The skill is immediately available — ask Claude to use it
 ```
@@ -246,11 +268,58 @@ Avoid spaces and special characters. Hyphens only.
 
 ---
 
+## Alternative: Building from OpenAPI Spec
+
+Use this approach for master data projections (customers, suppliers, parts) where you want the full field schema and all CRUD operations without recording a browser session first.
+
+### Option A — Live fetch (easiest)
+
+You just need to know the projection service name. Claude fetches the spec using your active IFS session.
+
+1. Open **Claude Desktop** (make sure you are authenticated to IFS — run `get_session_info` to check)
+2. Click the **+** icon and select **build_ifs_guide** from the prompt list
+3. In the **`projection_name`** field, enter the service name — for example:
+   - `CustomerHandling`
+   - `SupplierHandling`
+   - `InventoryPartHandling`
+4. Claude will fetch the spec, extract entity sets, operations, and field schemas, and present a summary
+5. Claude asks clarifying questions — which operations do your users need? What do field names mean? Any status values to explain?
+6. Claude drafts and saves the skill
+
+> **Tip:** Not sure of the service name? Look at the URL in browser DevTools when using that IFS screen — it will contain `/projection/v1/ServiceName.svc/`.
+
+### Option B — Local spec file
+
+If you prefer to inspect the spec first or work offline:
+
+1. Open your IFS Cloud instance in a browser
+2. Navigate to this URL (replace `CustomerHandling` with your projection):
+   ```
+   https://your-instance.ifs.cloud/main/ifsapplications/projection/v1/CustomerHandling.svc/$openapi?V2
+   ```
+3. Save the page as a `.json` file (in Chrome: **Ctrl+S**, save as *Webpage, Single File* or use the browser's save option for plain text)
+4. In Claude Desktop, select **build_ifs_guide** and provide the file path in the **`openapi_file_path`** field
+5. Claude parses the file and proceeds as in Option A
+
+### What the OpenAPI workflow covers
+
+Claude will ask you:
+- Which entity sets are relevant to your users (if the projection has many)
+- What each entity represents in business terms
+- What non-obvious field names mean
+- Which required fields a user always provides vs. which should be defaulted
+- Any enum or status values worth documenting
+- Multi-step workflows that combine operations
+
+The resulting skill documents required/optional fields clearly, includes realistic example values, and suggests common `$filter` patterns — ready to use immediately.
+
+---
+
 ## Updating an Existing Skill
 
 If IFS changes or you discover better patterns, you can update a skill:
 
-1. Run `build_ifs_guide` again with a new HAR file
+1. Run `build_ifs_guide` again — with a new HAR file, a new spec file, or using live fetch
 2. When asked for the filename, use the **same name as the existing skill**
 3. Claude will show you a summary of what changed (sections added, fields updated, examples modified)
 4. The update is saved immediately
@@ -312,6 +381,15 @@ Use the full absolute path with no quotes:
 - ❌ `"C:\Users\John\Downloads\my-recording.har"` (no quotes needed)
 - ❌ `my-recording.har` (not a full path)
 
+**"Live fetch says I'm not authenticated"**
+Run `get_session_info` first. If it shows no active session, run `start_oauth` to authenticate, then retry `build_ifs_guide` with `projection_name`.
+
+**"The OpenAPI spec file failed to parse"**
+Make sure the file is a valid JSON file (not HTML). When saving from a browser, use the browser's raw text option or copy-paste the JSON content into a `.json` file. The spec must be Swagger 2.0 or OpenAPI 3.0 JSON format.
+
+**"The projection name doesn't look right"**
+Check the URL in browser DevTools when using that IFS screen. It will contain something like `/projection/v1/CustomerHandling.svc/` — the part before `.svc` is the projection name to use.
+
 ---
 
 ## Quick Reference
@@ -321,7 +399,9 @@ Use the full absolute path with no quotes:
 | Open developer tools | F12 |
 | Clear network log | 🚫 button in Network tab |
 | Export HAR file | Right-click any entry → Save all as HAR with content |
-| Build a skill | `build_ifs_guide` prompt in Claude Desktop |
+| Build a skill from HAR | `build_ifs_guide` with `har_file_path=...` |
+| Build a skill from live spec | `build_ifs_guide` with `projection_name=CustomerHandling` |
+| Build a skill from spec file | `build_ifs_guide` with `openapi_file_path=...` |
 | Update a skill | Re-run `build_ifs_guide`, use the same filename |
 | Import a shared skill | `import_skill({ source: "https://..." })` |
 | List available skills | `get_api_guide()` (no arguments) |
