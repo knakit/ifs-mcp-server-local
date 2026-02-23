@@ -34,18 +34,18 @@ There are two ways to build a skill. Choose the one that fits your workflow:
 
 **HAR path:**
 ```
-1. CAPTURE   →   Record your actions in IFS using browser developer tools
-2. REFINE    →   Claude reviews the recording and asks you to explain each step
-3. MAKE      →   Claude drafts the skill file and saves it automatically
-4. USE       →   The skill is immediately available — ask Claude to use it
+1. CAPTURE  →  Record your actions in IFS using browser developer tools (saves as a .har file)
+2. REFINE   →  Claude analyses what it found and asks you to explain each step in plain language
+3. MAKE     →  Claude drafts the skill file and saves it automatically
+4. USE      →  The skill is immediately available — ask Claude to use it
 ```
 
 **OpenAPI path:**
 ```
-1. FETCH     →   Claude fetches the projection spec from IFS (or you provide a local file)
-2. REFINE    →   Claude asks which operations you need and what fields mean
-3. MAKE      →   Claude drafts the skill file and saves it automatically
-4. USE       →   The skill is immediately available — ask Claude to use it
+1. FETCH    →  Point Claude at a projection's OpenAPI spec — live fetch or a local file
+2. REFINE   →  Claude analyses the spec and asks which operations you need and what fields mean
+3. MAKE     →  Claude drafts the skill file and saves it automatically
+4. USE      →  The skill is immediately available — ask Claude to use it
 ```
 
 ---

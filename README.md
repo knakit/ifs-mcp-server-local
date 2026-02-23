@@ -16,20 +16,21 @@ Connecting an AI assistant to an ERP system like IFS usually means writing custo
 
 Instead of code, you teach Claude using **skills** — plain markdown files that describe how a specific part of IFS works: which endpoints to call, what fields matter, and what the data means in business terms. Claude reads the skill and figures out the rest.
 
-**Anyone who knows their way around IFS can create a skill.** No coding required. You record your workflow in the browser, hand the recording to Claude, answer a few questions about what each step means, and the skill is written and saved automatically.
+**Anyone who knows their way around IFS can create a skill.** No coding required. You either record your workflow in the browser or point Claude at the projection's OpenAPI spec, answer a few questions about what each step means, and the skill is written and saved automatically.
 
 ---
 
 ## How It Works
 
 ```
-CAPTURE  →  Record your actions in IFS using browser DevTools (saves as a .har file)
+DEFINE  →  Record a browser workflow (.har) for transactional flows, or fetch a projection's
+           OpenAPI spec for master data (customers, suppliers, parts, etc.)
   ↓
-REFINE   →  Claude reads the recording and asks you to explain each step in plain language
+REFINE  →  Claude analyses what it found and asks you to explain each step in plain language
   ↓
-MAKE     →  Claude drafts the skill file and saves it — available immediately
+MAKE    →  Claude drafts the skill file and saves it — available immediately
   ↓
-USE      →  Ask Claude anything covered by the skill. It knows exactly how to query IFS.
+USE     →  Ask Claude anything covered by the skill. It knows exactly how to query IFS.
 ```
 
 Skills are plain `.md` files. Share them with colleagues via a URL. Import with one command. The server ships with a built-in skill for IFS OData queries — everything else you build yourself, from your own workflows.
@@ -125,13 +126,18 @@ Edit `claude_desktop_config.json`:
 
 The server ships with a built-in OData reference guide, but to work with your specific IFS workflows you need to create at least one skill first. Skills teach Claude which endpoints exist, what fields to use, and what the data means.
 
-The fastest way: open IFS Cloud in your browser, do the workflow you want to automate, then export what the browser recorded:
+**Option A — HAR recording** (best for transactional workflows):
 
 1. Open IFS Cloud and press **F12** to open DevTools → go to the **Network** tab
 2. Click the **🚫** button to clear the log, then perform your workflow in IFS
 3. Right-click any entry in the Network tab → **Save all as HAR with content**
 4. In Claude Desktop, click **+** → select **build_ifs_guide** → provide the path to your `.har` file
 5. Answer Claude's questions about what each step means — it will draft and save the skill automatically
+
+**Option B — OpenAPI spec** (best for master data like customers, suppliers, parts):
+
+1. In Claude Desktop, click **+** → select **build_ifs_guide** → enter the projection name (e.g. `CustomerHandling`) in the `projection_name` field
+2. Claude fetches the spec from your IFS instance and walks you through the same Q&A
 
 → **[Full step-by-step skill authoring guide](SKILL_AUTHORING_GUIDE.md)**
 
