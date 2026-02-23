@@ -2,6 +2,7 @@ import crypto from "crypto";
 import axios from "axios";
 import { OAUTH_CONFIG, TokenData } from "../types.js";
 import { tokenStore } from "./token-store.js";
+import { saveSession } from "./session-manager.js";
 
 // PKCE helper functions
 function generateCodeVerifier(): string {
@@ -14,6 +15,8 @@ function generateCodeChallenge(verifier: string): string {
     .update(verifier)
     .digest("base64url");
 }
+
+const PENDING_AUTH_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 // OAuth flow manager
 export class OAuthManager {
@@ -29,6 +32,8 @@ export class OAuthManager {
     const codeChallenge = generateCodeChallenge(codeVerifier);
 
     this.pendingAuths.set(state, { codeVerifier, state });
+    // Auto-expire incomplete auth flows
+    setTimeout(() => this.pendingAuths.delete(state), PENDING_AUTH_TTL_MS);
 
     const params = new URLSearchParams({
       client_id: OAUTH_CONFIG.clientId,
@@ -61,7 +66,6 @@ export class OAuthManager {
         code: code,
         redirect_uri: OAUTH_CONFIG.redirectUri,
         client_id: OAUTH_CONFIG.clientId,
-        client_secret: OAUTH_CONFIG.clientSecret,
         code_verifier: pending.codeVerifier,
       },
       {
@@ -102,7 +106,6 @@ export class OAuthManager {
         grant_type: "refresh_token",
         refresh_token: session.refreshToken,
         client_id: OAUTH_CONFIG.clientId,
-        client_secret: OAUTH_CONFIG.clientSecret,
       },
       {
         headers: {
@@ -113,12 +116,16 @@ export class OAuthManager {
 
     const { access_token, refresh_token, expires_in } = response.data;
 
-    tokenStore.set(sessionId, {
+    const updated: TokenData = {
       accessToken: access_token,
       refreshToken: refresh_token || session.refreshToken,
       expiresAt: Date.now() + expires_in * 1000,
       userId: session.userId,
-    });
+    };
+
+    tokenStore.set(sessionId, updated);
+    // Persist refreshed token so it survives process restarts
+    saveSession(sessionId, updated);
   }
 
   // Get valid access token (refresh if needed)
