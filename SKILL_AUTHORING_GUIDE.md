@@ -50,6 +50,17 @@ There are two ways to build a skill. Choose the one that fits your workflow:
 
 ---
 
+To create a skill using openAPI specification, you don't need to do anything!
+Just input the projection name and ask claude to build it!
+
+Example prompt: 
+```
+Build IFS skill for projection: PartHandling
+Filename: ifs-parts.md
+Skill name: ifs-parts
+```
+Below guide is to create a skill for multi step workflows.
+
 ## Step 1 — Open IFS Cloud in Your Browser
 
 Open Chrome or Edge and navigate to your IFS Cloud instance. Log in as you normally would.
