@@ -61,6 +61,16 @@ function buildCsv(records: any[]): string {
   return lines.join("\n");
 }
 
+function stripPaginationParams(endpoint: string): string {
+  const qIdx = endpoint.indexOf("?");
+  if (qIdx === -1) return endpoint;
+  const params = new URLSearchParams(endpoint.substring(qIdx + 1));
+  params.delete("$top");
+  params.delete("$skip");
+  const remaining = params.toString();
+  return remaining ? `${endpoint.substring(0, qIdx)}?${remaining}` : endpoint.substring(0, qIdx);
+}
+
 function appendEndpointParam(endpoint: string, param: string): string {
   return endpoint.includes("?") ? `${endpoint}&${param}` : `${endpoint}?${param}`;
 }
@@ -75,13 +85,14 @@ export async function handler(args: any, oauthManager: OAuthManager) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
   const outputPath = path.join(exportDir, `${filename}_${timestamp}.csv`);
 
+  const baseEndpoint = stripPaginationParams(endpoint);
   let allRecords: any[] = [];
   let skip = 0;
   let batchCount = 0;
 
   try {
     while (true) {
-      let batchEndpoint = appendEndpointParam(endpoint, `$top=${BATCH_SIZE}&$skip=${skip}`);
+      let batchEndpoint = appendEndpointParam(baseEndpoint, `$top=${BATCH_SIZE}&$skip=${skip}`);
 
       const result = await callProtectedApi(
         { endpoint: batchEndpoint, method, sessionId, body },

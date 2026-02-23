@@ -3,6 +3,15 @@ import { OAuthManager } from "../lib/auth/oauth-manager.js";
 import { tokenStore } from "../lib/auth/token-store.js";
 import { saveSession } from "../lib/auth/session-manager.js";
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
 export function startCallbackServer(oauthManager: OAuthManager) {
   const app = express();
 
@@ -14,7 +23,7 @@ export function startCallbackServer(oauthManager: OAuthManager) {
         <html>
           <body>
             <h1>Authentication Failed</h1>
-            <p>Error: ${error}</p>
+            <p>Error: ${escapeHtml(String(error))}</p>
           </body>
         </html>
       `);
@@ -37,19 +46,16 @@ export function startCallbackServer(oauthManager: OAuthManager) {
         <html>
           <body>
             <h1>Authentication Successful!</h1>
-            <p>Session automatically saved!</p>
-            <p>Your session ID: <code>${sessionId}</code></p>
-            <p>The session has been stored in <code>~/.ifs-mcp/session.json</code></p>
-            <p>You can close this window and start using the MCP tools.</p>
+            <p>Session saved. You can close this window and start using the MCP tools.</p>
           </body>
         </html>
       `);
-    } catch (error) {
+    } catch (err) {
       res.send(`
         <html>
           <body>
             <h1>Authentication Failed</h1>
-            <p>Error: ${(error as Error).message}</p>
+            <p>Error: ${escapeHtml((err as Error).message)}</p>
           </body>
         </html>
       `);

@@ -4,7 +4,15 @@ import { callProtectedApi } from "../../lib/api-client.js";
 
 export const definition: Tool = {
   name: "call_protected_api",
-  description: "Call a protected API endpoint using OAuth token. If no sessionId is provided, uses the most recent saved session.",
+  description:
+    "Call a protected IFS Cloud API endpoint using an authenticated session. " +
+    "IMPORTANT: Only call endpoints that you have learned from a guide via get_api_guide. " +
+    "Do NOT attempt to discover, guess, or construct IFS endpoints from scratch — do not call $metadata or probe unknown paths. " +
+    "If the user asks for something and you do not have a guide that covers it, stop and tell them: " +
+    "'I don't have a skill for that workflow yet. Please perform this action in IFS Cloud in your browser, " +
+    "then export a HAR file from DevTools (Network tab → right-click → Save all as HAR with content) " +
+    "and use the build_ifs_guide prompt to create a skill for it.' " +
+    "If no sessionId is provided, uses the most recent saved session.",
   inputSchema: {
     type: "object",
     properties: {

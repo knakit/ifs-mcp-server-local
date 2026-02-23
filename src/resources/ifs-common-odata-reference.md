@@ -17,6 +17,28 @@ Use this reference when constructing OData query parameters for `call_protected_
 | AND | `expr1 and expr2` | `Status eq 'OPEN' and Amount gt 100` |
 | OR | `expr1 or expr2` | `Status eq 'OPEN' or Status eq 'NEW'` |
 
+## Filtering on Enum Fields
+
+Enum fields (like `Objstate`, `SupplyCode`, `CatalogType`) require the fully qualified type name in the filter value. The format is:
+
+```
+Field eq Namespace.EnumType'Value'
+```
+
+The namespace follows the pattern `IfsApp.ProjectionName.EnumType`. Each projection guide lists the qualified names for its enum fields.
+
+**Example — filter by order state:**
+```
+$filter=Objstate eq IfsApp.CustomerOrderHandling.CustomerOrderState'Released'
+```
+
+**Example — combine enum filters:**
+```
+$filter=Objstate eq IfsApp.CustomerOrderHandling.CustomerOrderState'Released' or Objstate eq IfsApp.CustomerOrderHandling.CustomerOrderState'Reserved'
+```
+
+> Important: Do NOT use plain string values like `Objstate eq 'Released'` for enum fields — this will return an error. Always use the fully qualified enum format.
+
 ## Query Parameters
 
 | Parameter | Syntax | Example |

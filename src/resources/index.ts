@@ -12,7 +12,13 @@ export interface MCPResource {
 
 function getResourceDirs(): string[] {
   const dirs: string[] = [];
-  // Check build directory first, then source directory
+  // User skills directory (separate repo or any folder) — takes precedence over bundled resources
+  const skillsDir = process.env.SKILLS_DIR;
+  if (skillsDir) {
+    const resolved = path.resolve(skillsDir);
+    if (fs.existsSync(resolved)) dirs.push(resolved);
+  }
+  // Bundled resources (OData reference etc.) — always scanned
   if (fs.existsSync(__dirname)) dirs.push(__dirname);
   const srcPath = path.resolve(__dirname, "..", "..", "src", "resources");
   if (srcPath !== __dirname && fs.existsSync(srcPath)) dirs.push(srcPath);
@@ -67,7 +73,9 @@ function buildResource(filename: string, filePath: string): MCPResource {
   };
 }
 
-const discovered = discoverMarkdownFiles();
-export const resources: MCPResource[] = Array.from(discovered.entries()).map(
-  ([filename, filePath]) => buildResource(filename, filePath)
-);
+export function getResources(): MCPResource[] {
+  const discovered = discoverMarkdownFiles();
+  return Array.from(discovered.entries()).map(
+    ([filename, filePath]) => buildResource(filename, filePath)
+  );
+}
