@@ -23,59 +23,7 @@ See [SKILL_AUTHORING_GUIDE.md](SKILL_AUTHORING_GUIDE.md) for the full process of
 
 ### How to submit a skill
 
-1. **Fork this repository** on GitHub
-
-2. **Build your skill** using the `build_ifs_guide` prompt in Claude Desktop, or write it manually following the conventions in existing skills in `src/resources/`
-
-3. **Place your skill file** in `src/resources/` using the naming convention:
-   ```
-   ifs-[module]-[area].md
-   ```
-   Where `[module]` is the IFS functional area:
-
-   | Module | Covers |
-   |--------|--------|
-   | `common` | Shared references (OData syntax, field types, etc.) |
-   | `procurement` | Purchase orders, suppliers, quotes, receiving |
-   | `sales` | Customer orders, quotations, invoices |
-   | `manufacturing` | Work orders, shop orders, parts, BOMs |
-   | `maintenance` | Equipment, service orders, fault reporting |
-   | `finance` | Supplier invoices, GL, cost centers |
-   | `inventory` | Parts, stock, warehouse locations |
-   | `projects` | Project management, time reporting |
-   | `hr` | Employees, time and attendance |
-
-   Examples: `ifs-procurement-purchase-orders.md`, `ifs-sales-customer-orders.md`, `ifs-manufacturing-work-orders.md`
-
-   If your skill doesn't fit neatly into one module, use the closest match or open a PR and we'll figure it out together.
-
-4. **Review your skill file** against this checklist:
-   - [ ] Has a clear `# Heading` that describes the IFS projection
-   - [ ] Includes the base URL path for the projection
-   - [ ] Explains each operation in plain language
-   - [ ] Lists the most useful `$select` fields
-   - [ ] Has at least 2–3 realistic filter examples
-   - [ ] Status/state values are explained in business terms
-   - [ ] No real customer data, order numbers, or company-specific values
-   - [ ] File size is under 30KB (split into multiple files if larger)
-
-5. **Open a Pull Request** with:
-   - A brief description of the IFS projection the skill covers
-   - Which IFS module it belongs to (Manufacturing, Procurement, Sales, etc.)
-   - Any known limitations or IFS version-specific notes
-
-### Sharing without a PR
-
-If you'd rather not go through the PR process, you can share your skill by:
-- Uploading the `.md` file to a GitHub Gist or any public URL
-- Posting the link in a GitHub Issue or Discussion
-
-Others can import it directly with:
-```
-import_skill({ source: "https://raw.githubusercontent.com/..." })
-```
-
----
+Community maintained skills can be found in [IFS Skills](https://github.com/knakit/ifs-mcp-skills). Check the contribution guide on making a new skill.
 
 ## Reporting a Bug
 
