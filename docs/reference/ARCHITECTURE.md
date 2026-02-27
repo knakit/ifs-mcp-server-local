@@ -119,7 +119,7 @@ Authenticated HTTP client. Constructs `API_BASE_URL + endpoint`, attaches Bearer
 **Token Store** (`src/lib/auth/token-store.ts`) - In-memory `Map<sessionId, TokenData>`.
 
 ### 6. Configuration (`src/lib/types.ts`)
-All config via environment variables (see `CONFIGURATION.md`):
+All config via environment variables (see [Configuration](../getting-started/CONFIGURATION.md)):
 `API_BASE_URL`, `OAUTH_REALM`, `OAUTH_CLIENT_ID`, `SKILLS_DIR` (optional)
 
 ### 7. Tools

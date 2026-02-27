@@ -5,6 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
 [![IFS Cloud](https://img.shields.io/badge/IFS_Cloud-OAuth_2.0-orange.svg)](https://www.ifs.com/)
+[![Download](https://img.shields.io/github/v/release/knakit/ifs-mcp-server-local?label=download&logo=github)](https://github.com/knakit/ifs-mcp-server-local/releases/latest)
 
 Connect Claude to your IFS Cloud instance and interact with your ERP through natural conversation.
 
@@ -12,15 +13,28 @@ Connect Claude to your IFS Cloud instance and interact with your ERP through nat
 
 ## The Idea
 
-Connecting an AI assistant to an ERP system like IFS usually means writing custom code for every endpoint — work that requires developers who understand both the API and the AI framework. This server takes a different approach.
+What if you could automate your IFS Cloud workflows without buying anything extra? No new subscriptions, no new platforms, no developers needed.
 
-Instead of code, you teach Claude using **skills** — plain markdown files that describe how a specific part of IFS works: which endpoints to call, what fields matter, and what the data means in business terms. Claude reads the skill and figures out the rest.
+Install the extension, teach Claude the skills, and let it handle the repetitive queries, lookups, and data exports — all from a conversation. Think of it as a coworker who never gets tired of the repetitive stuff.
 
-**Anyone who knows their way around IFS can create a skill.** No coding required. You either record your workflow in the browser or point Claude at the projection's OpenAPI spec, answer a few questions about what each step means, and the skill is written and saved automatically.
+The best part? You stay in control. You decide what the agent knows, how it behaves, and what it can do — the possibilities are only limited by your imagination.
+
+![IFS MCP Server Demo 1](/docs/images/ifs-demo-skills-summary.gif)
+
+![IFS MCP Server Demo 2](/docs/images/ifs-demo-customer-search.gif)
 
 ---
 
 ## How It Works
+
+The MCP server acts as the bridge between the **skills** and IFS Cloud. In order to make the tool useful, you need to create the skills so Claude can use them to call IFS endpoints to perform the work.
+
+> Skills are the brain of the agent. More skills, more things you can do!
+
+There are a few ways of creating a skill:
+* **Using the IFS projection** — Just state the IFS projection and Claude will find the OpenAPI spec for it and draft the skill for you. Once the skill is created, you can query anything in that projection through conversation. This is typically good for basic data projections.
+* **Using a recorded flow** — If you want to handle more complex flows that involve several steps and switching between multiple projections (e.g. Create a Work Task → Assign Work → Start Work), record the flow and import it into Claude. Claude will extract the steps and build a skill file from the network calls.
+* **Import a skill** — Import an existing skill `.md` file via URL or by uploading a local file.
 
 ```
 DEFINE  →  Record a browser workflow (.har) for transactional flows, or fetch a projection's
@@ -33,131 +47,43 @@ MAKE    →  Claude drafts the skill file and saves it — available immediately
 USE     →  Ask Claude anything covered by the skill. It knows exactly how to query IFS.
 ```
 
-Skills are plain `.md` files. Share them with colleagues via a URL. Import with one command. The server ships with a built-in skill for IFS OData queries — everything else you build yourself, from your own workflows.
-
-→ **[Read the full skill authoring guide](SKILL_AUTHORING_GUIDE.md)**
+Share your awesome skills in [IFS MCP Skills](https://github.com/knakit/ifs-mcp-skills) so others can use them!
 
 ---
 
-## Prerequisites
+## Quick Start
 
-- [Node.js](https://nodejs.org/) v18 or later
-- [Claude Desktop](https://claude.ai/download)
-- IFS Cloud instance with a public OAuth 2.0 client (Client ID + Realm)
+Download the latest `ifs-mcp-server.mcpb` from [GitHub Releases](https://github.com/knakit/ifs-mcp-server-local/releases) and install it in Claude Desktop:
 
----
-
-## Setup
-
-**1. Clone and install**
-```bash
-git clone <repository-url>
-cd ifs-mcp-server
-npm install
-```
-
-**2. Create an OAuth client in IFS Cloud IAM**
-
-You need a public OAuth client in your IFS Cloud instance. If one has already been set up for this tool, skip to step 3.
-
-> If you don't have access to this screen, ask your IFS administrator to create the client for you.
-
-In IFS Cloud, navigate to: **Access Control → Identity and Access Manager → IAM Clients**
-
-1. Click **New** to open the Create New Client dialog
-2. Enter a **Client ID** (e.g. `ifs-mcp-server`) and optionally a description
-3. Toggle **Enabled** ON
-4. Toggle **Public Client** ON — this is the key setting; no secret will be required
-5. Under **Redirect Uri**, click **+** and add:
-   ```
-   http://localhost:3000/oauth/callback
-   ```
-6. Click **OK** to save
-
-Note the **Client ID** you entered and your **realm name** (ask your administrator if unsure) — you'll need both in the next step.
-
-**3. Configure**
-```bash
-# Windows
-copy .env.example .env
-
-# macOS / Linux
-cp .env.example .env
-```
-Edit `.env`:
-```
-API_BASE_URL=https://your-instance.ifs.cloud
-OAUTH_REALM=your-realm-name
-OAUTH_CLIENT_ID=your-client-id
-```
-
-> Optional: set `SKILLS_DIR` to keep skills in a separate folder (e.g. a dedicated git repo). See [CONFIGURATION.md](CONFIGURATION.md) for details.
-
-**4. Build**
-```bash
-# Windows
-npx tsc
-
-# macOS / Linux
-npm run build
-```
-
-**5. Add to Claude Desktop**
-
-Edit `claude_desktop_config.json`:
-- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
-- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Linux:** `~/.config/Claude/claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "ifs": {
-      "command": "node",
-      "args": ["/absolute/path/to/ifs-mcp-server/build/index.js"]
-    }
-  }
-}
-```
-
-> To connect to multiple IFS environments simultaneously (e.g. dev and prod), register the server twice with different names and `env` blocks — see [CONFIGURATION.md](CONFIGURATION.md).
-
-**6. Build your first skill**
-
-The server ships with a built-in OData reference guide, but to work with your specific IFS workflows you need to create at least one skill first. Skills teach Claude which endpoints exist, what fields to use, and what the data means.
-
-**Option A — HAR recording** (best for transactional workflows):
-
-1. Open IFS Cloud and press **F12** to open DevTools → go to the **Network** tab
-2. Click the **🚫** button to clear the log, then perform your workflow in IFS
-3. Right-click any entry in the Network tab → **Save all as HAR with content**
-4. In Claude Desktop, click **+** → select **build_ifs_guide** → provide the path to your `.har` file
-5. Answer Claude's questions about what each step means — it will draft and save the skill automatically
-
-**Option B — OpenAPI spec** (best for master data like customers, suppliers, parts):
-
-1. In Claude Desktop, click **+** → select **build_ifs_guide** → enter the projection name (e.g. `CustomerHandling`) in the `projection_name` field
-2. Claude fetches the spec from your IFS instance and walks you through the same Q&A
-
-→ **[Full step-by-step skill authoring guide](SKILL_AUTHORING_GUIDE.md)**
-
-**7. Authenticate**
-
-Restart Claude Desktop and run `start_oauth`. A browser window opens — log in to IFS and your session is saved automatically.
+> **[See the installation guide →](docs/getting-started/INSTALLATION.md)** — OAuth client setup, configuration, first authentication, and building your first skill.
 
 ---
 
 ## Documentation
 
+### Getting Started
 | Document | What's in it |
 |----------|--------------|
-| [SKILL_AUTHORING_GUIDE.md](SKILL_AUTHORING_GUIDE.md) | How to build, update, and share skills — start here |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute skills, report bugs, or suggest improvements |
-| [SECURITY.md](SECURITY.md) | Data handling, responsible use, and vulnerability reporting |
-| [IFS_TOOLS_SUMMARY.md](IFS_TOOLS_SUMMARY.md) | Full reference for all tools and prompts |
-| [CONFIGURATION.md](CONFIGURATION.md) | Environment variables and advanced setup |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | System design and component overview |
+| [Installation](docs/getting-started/INSTALLATION.md) | Step-by-step setup: OAuth client, extension install, first authentication |
+| [Configuration](docs/getting-started/CONFIGURATION.md) | Skills directory setup and security notes |
+
+### Guides
+| Document | What's in it |
+|----------|--------------|
+| [Skill Authoring](docs/guides/SKILL_AUTHORING.md) | How to build, update, and share skills — HAR recordings and OpenAPI specs |
+
+### Reference
+| Document | What's in it |
+|----------|--------------|
+| [Tools & Prompts](docs/reference/TOOLS.md) | Full reference for all tools and prompts |
+| [Architecture](docs/reference/ARCHITECTURE.md) | System design and component overview |
+
+### Community
+| Document | What's in it |
+|----------|--------------|
+| [Contributing](CONTRIBUTING.md) | How to contribute skills, report bugs, or develop the server |
+| [Security](SECURITY.md) | Data handling, responsible use, and vulnerability reporting |
 
 ---
 
-Built with the help of [Claude Code](https://claude.ai/claude-code).
+Built with the help of [Claude Code](https://claude.ai/claude-code). Shared with love for the IFS Community 💜

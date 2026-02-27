@@ -19,7 +19,7 @@ Skills are the most valuable contribution you can make. Every skill you share sa
 - **Generic** — no real order numbers, customer IDs, or company-specific data. Use placeholders like `CUST-001`, `ORDER-10001`
 - **Tested** — you've actually used it to query your IFS instance
 
-See [SKILL_AUTHORING_GUIDE.md](SKILL_AUTHORING_GUIDE.md) for the full process of building a skill from scratch.
+See the [Skill Authoring Guide](docs/guides/SKILL_AUTHORING.md) for the full process of building a skill from scratch.
 
 ### How to submit a skill
 
@@ -66,24 +66,74 @@ For bug fixes or small improvements, open a PR with a clear description of what 
 
 For larger changes (new tools, architectural changes), open an issue first to discuss the approach before writing code — this avoids wasted effort if the direction doesn't fit the project.
 
-### Setup
+### Development Setup
 
+If you want to run the server from source (for development or testing changes), follow these steps instead of the standard MCPB installation.
+
+**1. Clone and install**
 ```bash
 git clone https://github.com/knakit/ifs-mcp-server-local
 cd ifs-mcp-server-local
 npm install
 ```
 
-Copy `.env.example` to `.env` and fill in your IFS credentials.
+**2. Configure**
+```bash
+# Windows
+copy .env.example .env
 
-### Build
+# macOS / Linux
+cp .env.example .env
+```
+Edit `.env`:
+```
+API_BASE_URL=https://your-instance.ifs.cloud
+OAUTH_REALM=your-realm-name
+OAUTH_CLIENT_ID=your-client-id
+```
 
+**3. Build**
 ```bash
 # Windows
 npx tsc
 
 # macOS / Linux
 npm run build
+```
+
+**4. Add to Claude Desktop**
+
+Edit `claude_desktop_config.json`:
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Linux:** `~/.config/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "ifs": {
+      "command": "node",
+      "args": ["/absolute/path/to/ifs-mcp-server-local/build/index.js"]
+    }
+  }
+}
+```
+
+You can also pass environment variables directly in the config instead of using `.env`:
+```json
+{
+  "mcpServers": {
+    "ifs": {
+      "command": "node",
+      "args": ["/absolute/path/to/ifs-mcp-server-local/build/index.js"],
+      "env": {
+        "API_BASE_URL": "https://your-instance.ifs.cloud",
+        "OAUTH_REALM": "your-realm-name",
+        "OAUTH_CLIENT_ID": "your-client-id"
+      }
+    }
+  }
+}
 ```
 
 ### Before submitting a PR
