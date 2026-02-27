@@ -10,7 +10,7 @@ export const definition: Tool = {
       guide: {
         type: "string",
         description:
-          "The guide to retrieve. Lists available guides if omitted.",
+          "The guide to retrieve — matched against URI, name, and description (case-insensitive). Use a keyword like 'parts', 'sales', or 'customer'. Lists all available guides if omitted.",
       },
     },
   },
@@ -36,8 +36,11 @@ export async function handler(args: any) {
     };
   }
 
+  const needle = guide.toLowerCase();
   const resource = resources.find((r) =>
-    r.definition.uri.includes(guide)
+    r.definition.uri.toLowerCase().includes(needle) ||
+    r.definition.name?.toLowerCase().includes(needle) ||
+    r.definition.description?.toLowerCase().includes(needle)
   );
 
   if (!resource) {
@@ -54,7 +57,7 @@ export async function handler(args: any) {
               "'I don't have a skill for that workflow yet. To create one: " +
               "(1) Perform this action in IFS Cloud in your browser as you normally would. " +
               "(2) Open DevTools (F12), go to the Network tab, right-click any request and choose \"Save all as HAR with content\". " +
-              "(3) Use the build_ifs_guide prompt with the HAR file path — I'll walk you through turning it into a skill.' " +
+              "(3) Use the build_ifs_skill_guide prompt with the HAR file path — I'll walk you through turning it into a skill.' " +
               "Do not proceed with any API calls until a guide exists.",
           }, null, 2),
         },

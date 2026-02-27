@@ -1,0 +1,104 @@
+{
+  "manifest_version": "0.3",
+  "name": "ifs-mcp-server",
+  "display_name": "IFS Cloud MCP Server",
+  "version": "1.0.0",
+  "description": "Connect Claude to IFS Cloud ERP via OAuth 2.0 — query data, export reports, and build reusable API guides.",
+  "long_description": "## IFS Cloud MCP Server\n\nThis extension connects Claude to your IFS Cloud ERP instance using OAuth 2.0 authentication.\n\n**What you can do:**\n- Authenticate with IFS Cloud using your browser (OAuth device flow)\n- Query any IFS OData API endpoint with natural language\n- Export large result sets to CSV with automatic pagination\n- Build and share reusable API guides (skills) for common IFS projections\n- Import skills from URLs or local files — no restart needed\n\n**Getting started:**\n1. Enter your IFS Cloud URL, OAuth realm, and client ID in the settings below\n2. Ask Claude to `start_oauth` to authenticate\n3. Start querying your IFS data\n\nSee the [README](https://github.com/knakit/ifs-mcp-server-local#readme) for full setup instructions and examples.",
+  "author": {
+    "name": "knakit",
+    "url": "https://github.com/knakit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/knakit/ifs-mcp-server-local.git"
+  },
+  "homepage": "https://github.com/knakit/ifs-mcp-server-local",
+  "documentation": "https://github.com/knakit/ifs-mcp-server-local#readme",
+  "support": "https://github.com/knakit/ifs-mcp-server-local/issues",
+  "license": "MIT",
+  "keywords": ["ifs", "ifs-cloud", "erp", "odata", "oauth"],
+  "server": {
+    "type": "node",
+    "entry_point": "build/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/build/index.js"],
+      "env": {
+        "API_BASE_URL": "${user_config.api_base_url}",
+        "OAUTH_REALM": "${user_config.oauth_realm}",
+        "OAUTH_CLIENT_ID": "${user_config.oauth_client_id}",
+        "SKILLS_DIR": "${user_config.skills_dir}"
+      }
+    }
+  },
+  "user_config": {
+    "api_base_url": {
+      "type": "string",
+      "title": "IFS Cloud URL",
+      "description": "Base URL of your IFS Cloud instance, e.g. https://your-tenant.ifs.cloud",
+      "required": true
+    },
+    "oauth_realm": {
+      "type": "string",
+      "title": "OAuth Realm",
+      "description": "Your IFS OAuth realm name, e.g. mycompanyrealm",
+      "required": true
+    },
+    "oauth_client_id": {
+      "type": "string",
+      "title": "OAuth Client ID",
+      "description": "Your IFS OAuth 2.0 client ID",
+      "required": true
+    },
+    "skills_dir": {
+      "type": "string",
+      "title": "Skills Directory (optional)",
+      "description": "Absolute path to a custom skills directory. If omitted, skills are stored inside the extension's build/resources folder.",
+      "required": false
+    }
+  },
+  "tools": [
+    {
+      "name": "start_oauth",
+      "description": "Start OAuth 2.0 authentication flow. Checks for active session and opens a login window if needed."
+    },
+    {
+      "name": "get_session_info",
+      "description": "Get information about the current saved session, including session ID and expiration status."
+    },
+    {
+      "name": "call_protected_api",
+      "description": "Call a protected IFS Cloud API endpoint using an authenticated session."
+    },
+    {
+      "name": "get_api_guide",
+      "description": "Get the API guide for a specific IFS projection. Call this before using call_protected_api to learn the correct endpoints, OData syntax, and query patterns."
+    },
+    {
+      "name": "export_api_data",
+      "description": "Export large API result sets to a CSV file using automatic $top/$skip pagination."
+    },
+    {
+      "name": "import_skill",
+      "description": "Import an IFS resource guide (skill) from an HTTPS URL or local file path and make it available immediately."
+    },
+    {
+      "name": "save_skill",
+      "description": "Save an IFS resource guide (skill) to the skills library. For new skills, writes immediately. For existing skills, returns a summary of what changed."
+    }
+  ],
+  "prompts": [
+    {
+      "name": "build_ifs_skill_guide",
+      "description": "Build or update an IFS resource guide (skill) from a browser HAR file, a downloaded OpenAPI/Swagger spec, or by fetching the spec live from an authenticated IFS session.",
+      "text": "Build or update an IFS resource guide (skill). Provide exactly one of: har_file_path (path to a browser HAR export), openapi_file_path (path to a downloaded OpenAPI/Swagger spec), or projection_name (to fetch the spec live from an authenticated IFS session). Claude will analyse the input, draft a guide in the correct format, and save it automatically."
+    }
+  ],
+  "compatibility": {
+    "platforms": ["darwin", "win32"],
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  }
+}

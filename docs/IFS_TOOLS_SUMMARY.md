@@ -61,7 +61,7 @@ import_skill({ source: "https://...", filename: "ifs-purchase-orders.md" })
 **Inputs:** `source` (required — URL or file path), `filename` (optional — defaults to last segment of source)
 
 ### 7. save_skill
-Save or update a skill guide file in the skills library. Writes to `SKILLS_DIR` if set, otherwise `build/resources/`. Used internally by `build_ifs_guide` but can also be called directly. For updates, returns a structured diff showing what changed (sections, fields, examples added or removed). The skill is available immediately — no restart needed.
+Save or update a skill guide file in the skills library. Writes to `SKILLS_DIR` if set, otherwise `build/resources/`. Used internally by `build_ifs_skill_guide` but can also be called directly. For updates, returns a structured diff showing what changed (sections, fields, examples added or removed). The skill is available immediately — no restart needed.
 
 ```
 save_skill({ filename: "ifs-purchase-orders.md", content: "# Purchase Orders\n..." })
@@ -73,7 +73,7 @@ save_skill({ filename: "ifs-purchase-orders.md", content: "# Purchase Orders\n..
 
 Prompts are guided workflows available in Claude Desktop's `+` menu. They set up a structured conversation with instructions and context already loaded.
 
-### build_ifs_guide
+### build_ifs_skill_guide
 Build a new IFS skill from browser traffic, a downloaded OpenAPI spec, or by fetching the spec live from IFS. Walks through a guided conversation to capture business context before drafting the guide. Provide exactly one of the three arguments below.
 
 **Arguments (provide exactly one):**
@@ -84,13 +84,13 @@ Build a new IFS skill from browser traffic, a downloaded OpenAPI spec, or by fet
 **HAR workflow:**
 
 1. **Capture** — Use IFS Cloud in your browser. In DevTools (F12), go to Network tab, right-click → *Save all as HAR with content*.
-2. **Refine** — Open `build_ifs_guide` with `har_file_path`. Claude summarises operations found and asks what each means in your workflow.
+2. **Refine** — Open `build_ifs_skill_guide` with `har_file_path`. Claude summarises operations found and asks what each means in your workflow.
 3. **Make** — Claude drafts the guide, asks for a filename, and saves it via `save_skill`. Change summary shown automatically when updating.
 4. **Use** — The skill is available immediately via `get_api_guide` — no restart needed.
 
 **OpenAPI workflow (live fetch):**
 
-1. **Fetch** — Open `build_ifs_guide` with `projection_name=CustomerHandling`. Claude calls `call_protected_api` to fetch the spec from `/$openapi?V2`.
+1. **Fetch** — Open `build_ifs_skill_guide` with `projection_name=CustomerHandling`. Claude calls `call_protected_api` to fetch the spec from `/$openapi?V2`.
 2. **Refine** — Claude extracts entity sets, operations, and field schemas, then asks which operations you need and what field names mean.
 3. **Make** — Claude drafts the guide, asks for a filename, and saves it via `save_skill`.
 4. **Use** — Available immediately.
@@ -109,7 +109,7 @@ Resources are API guides that Claude reads to learn how to construct `call_prote
 
 ### Adding New Resources
 
-The recommended way is via the `build_ifs_guide` prompt (see above). To add one manually:
+The recommended way is via the `build_ifs_skill_guide` prompt (see above). To add one manually:
 
 1. Create a markdown file in `SKILLS_DIR` (if set) or `build/resources/` (e.g., `ifs-purchase-orders.md`)
    - Start with `# Heading` (becomes the resource name)

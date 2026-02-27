@@ -3,7 +3,7 @@ import { parseHar, summariseHar } from "../lib/har-parser.js";
 import { parseOpenApi, summariseOpenApi } from "../lib/openapi-parser.js";
 
 export const definition: Prompt = {
-  name: "build_ifs_guide",
+  name: "build_ifs_skill_guide",
   description:
     "Build or update an IFS resource guide (skill) from a browser HAR file, a downloaded OpenAPI/Swagger spec, " +
     "or by fetching the spec live from an authenticated IFS session. " +
@@ -217,7 +217,7 @@ export async function handler(args: Record<string, string>): Promise<GetPromptRe
           content: {
             type: "text",
             text:
-              "I provided more than one input source to `build_ifs_guide`. Please use exactly one of:\n" +
+              "I provided more than one input source to `build_ifs_skill_guide`. Please use exactly one of:\n" +
               "- `har_file_path`\n" +
               "- `openapi_file_path`\n" +
               "- `projection_name`",
