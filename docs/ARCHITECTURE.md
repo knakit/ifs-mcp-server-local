@@ -48,7 +48,7 @@
                     │                        │                           │
                     │                        │  Prompt Registry          │
                     │                        │  ┌─────────────────────┐  │
-                    │                        │  │  build_ifs_guide    │  │
+                    │                        │  │  build_ifs_skill_guide    │  │
                     │                        │  └─────────────────────┘  │
                     │                        │                           │
                     │                        │  Resource Registry        │
@@ -140,9 +140,9 @@ MCP prompts are guided conversation starters available in Claude Desktop's `+` m
 
 | Prompt | Description |
 |--------|-------------|
-| `build_ifs_guide` | Builds a skill from a HAR file, a local OpenAPI/Swagger JSON file, or by fetching the spec live from IFS |
+| `build_ifs_skill_guide` | Builds a skill from a HAR file, a local OpenAPI/Swagger JSON file, or by fetching the spec live from IFS |
 
-`build_ifs_guide` accepts one of three mutually exclusive arguments:
+`build_ifs_skill_guide` accepts one of three mutually exclusive arguments:
 - `har_file_path` — calls `parseHar()` from `src/lib/har-parser.ts`, injects the structured summary
 - `openapi_file_path` — calls `parseOpenApi()` from `src/lib/openapi-parser.ts`, injects the entity/field summary
 - `projection_name` — injects instructions for Claude to call `call_protected_api` to fetch `/$openapi?V2` live, then parse and analyse the result in-context
@@ -183,7 +183,7 @@ HAR path:
    DevTools Network tab ──export──> .har file
 
 2. REFINE
-   User invokes build_ifs_guide(har_file_path=...) in Claude Desktop
+   User invokes build_ifs_skill_guide(har_file_path=...) in Claude Desktop
    MCP prompt handler ──parseHar()──> filtered operation groups
    Claude presents summary ──asks clarifying questions──> User answers
 
@@ -192,13 +192,13 @@ OpenAPI path (local file):
    User fetches {server}/.svc/$openapi?V2 from browser, saves as JSON
 
 2. REFINE
-   User invokes build_ifs_guide(openapi_file_path=...) in Claude Desktop
+   User invokes build_ifs_skill_guide(openapi_file_path=...) in Claude Desktop
    MCP prompt handler ──parseOpenApi()──> entity sets + field schemas
    Claude presents summary ──asks clarifying questions──> User answers
 
 OpenAPI path (live fetch):
 1. REFINE (directly)
-   User invokes build_ifs_guide(projection_name=CustomerHandling)
+   User invokes build_ifs_skill_guide(projection_name=CustomerHandling)
    MCP prompt injects instructions ──Claude calls call_protected_api──> $openapi?V2 JSON
    Claude extracts entity sets, fields ──asks clarifying questions──> User answers
 

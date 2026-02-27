@@ -11,7 +11,7 @@ export const definition: Tool = {
     "If the user asks for something and you do not have a guide that covers it, stop and tell them: " +
     "'I don't have a skill for that workflow yet. Please perform this action in IFS Cloud in your browser, " +
     "then export a HAR file from DevTools (Network tab → right-click → Save all as HAR with content) " +
-    "and use the build_ifs_guide prompt to create a skill for it.' " +
+    "and use the build_ifs_skill_guide prompt to create a skill for it.' " +
     "If no sessionId is provided, uses the most recent saved session.",
   inputSchema: {
     type: "object",

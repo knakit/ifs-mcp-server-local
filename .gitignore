@@ -25,6 +25,9 @@ npm-debug.log*
 # Session storage
 .ifs-mcp/
 
+# MCPB bundle (released as GitHub Release asset, not committed)
+*.mcpb
+
 # One-off dev/reference files
 ifs_projections/
 parse-swagger.cjs
