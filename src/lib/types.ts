@@ -1,5 +1,5 @@
 // API Configuration - accessed via getters to ensure dotenv has loaded first
-export const getApiBaseUrl = () => process.env.API_BASE_URL || "";
+export const getApiBaseUrl = () => (process.env.API_BASE_URL || "").replace(/\/+$/, "");
 export const getOAuthRealm = () => process.env.OAUTH_REALM || "";
 export const getOAuthClientId = () => process.env.OAUTH_CLIENT_ID || "";
 

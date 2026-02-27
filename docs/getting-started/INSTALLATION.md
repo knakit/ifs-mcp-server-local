@@ -25,6 +25,8 @@ In IFS Cloud, navigate to: **Access Control → Identity and Access Manager → 
    ```
 6. Click **OK** to save
 
+![IFS IAM Client Setup](../images/ifs-iam-client-setup.png)
+
 ---
 ## Step 2 - Create the skills directory
 Community maintained skills can be found in the github repository [IFS Skills](https://github.com/knakit/ifs-mcp-skills). You can clone the repository or create an empty folder to same the skill files.

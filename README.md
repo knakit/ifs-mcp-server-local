@@ -13,15 +13,28 @@ Connect Claude to your IFS Cloud instance and interact with your ERP through nat
 
 ## The Idea
 
-Connecting an AI assistant to an ERP system like IFS usually means writing custom code for every endpoint — work that requires developers who understand both the API and the AI framework. This server takes a different approach.
+What if you could automate your IFS Cloud workflows without buying anything extra? No new subscriptions, no new platforms, no developers needed.
 
-Instead of code, you teach Claude using **skills** — plain markdown files that describe how a specific part of IFS works: which endpoints to call, what fields matter, and what the data means in business terms. Claude reads the skill and figures out the rest.
+Install the extension, teach Claude the skills, and let it handle the repetitive queries, lookups, and data exports — all from a conversation. Think of it as a coworker who never gets tired of the repetitive stuff.
 
-**Anyone who knows their way around IFS can create a skill.** No coding required. You either record your workflow in the browser or point Claude at the projection's OpenAPI spec, answer a few questions about what each step means, and the skill is written and saved automatically.
+The best part? You stay in control. You decide what the agent knows, how it behaves, and what it can do — the possibilities are only limited by your imagination.
+
+![IFS MCP Server Demo 1](/docs/images/ifs-demo-skills-summary.gif)
+
+![IFS MCP Server Demo 2](/docs/images/ifs-demo-customer-search.gif)
 
 ---
 
 ## How It Works
+
+The MCP server acts as the bridge between the **skills** and IFS Cloud. In order to make the tool useful, you need to create the skills so Claude can use them to call IFS endpoints to perform the work.
+
+> Skills are the brain of the agent. More skills, more things you can do!
+
+There are a few ways of creating a skill:
+* **Using the IFS projection** — Just state the IFS projection and Claude will find the OpenAPI spec for it and draft the skill for you. Once the skill is created, you can query anything in that projection through conversation. This is typically good for basic data projections.
+* **Using a recorded flow** — If you want to handle more complex flows that involve several steps and switching between multiple projections (e.g. Create a Work Task → Assign Work → Start Work), record the flow and import it into Claude. Claude will extract the steps and build a skill file from the network calls.
+* **Import a skill** — Import an existing skill `.md` file via URL or by uploading a local file.
 
 ```
 DEFINE  →  Record a browser workflow (.har) for transactional flows, or fetch a projection's
@@ -34,7 +47,7 @@ MAKE    →  Claude drafts the skill file and saves it — available immediately
 USE     →  Ask Claude anything covered by the skill. It knows exactly how to query IFS.
 ```
 
-Skills are plain `.md` files. Share them with colleagues via a URL. Import with one command. The server ships with a built-in skill for IFS OData queries — everything else you build yourself, from your own workflows.
+Share your awesome skills in [IFS MCP Skills](https://github.com/knakit/ifs-mcp-skills) so others can use them!
 
 ---
 
@@ -42,7 +55,7 @@ Skills are plain `.md` files. Share them with colleagues via a URL. Import with 
 
 Download the latest `ifs-mcp-server.mcpb` from [GitHub Releases](https://github.com/knakit/ifs-mcp-server-local/releases) and install it in Claude Desktop:
 
-> **[Refer the installation guide →](docs/getting-started/INSTALLATION.md)** — OAuth client setup, configuration, first authentication, and building your first skill.
+> **[See the installation guide →](docs/getting-started/INSTALLATION.md)** — OAuth client setup, configuration, first authentication, and building your first skill.
 
 ---
 
@@ -52,7 +65,7 @@ Download the latest `ifs-mcp-server.mcpb` from [GitHub Releases](https://github.
 | Document | What's in it |
 |----------|--------------|
 | [Installation](docs/getting-started/INSTALLATION.md) | Step-by-step setup: OAuth client, extension install, first authentication |
-| [Configuration](docs/getting-started/CONFIGURATION.md) | Skills directory, multiple environments, advanced options |
+| [Configuration](docs/getting-started/CONFIGURATION.md) | Skills directory setup and security notes |
 
 ### Guides
 | Document | What's in it |
@@ -73,4 +86,4 @@ Download the latest `ifs-mcp-server.mcpb` from [GitHub Releases](https://github.
 
 ---
 
-Built with the help of [Claude Code](https://claude.ai/claude-code).
+Built with the help of [Claude Code](https://claude.ai/claude-code). Shared with love for the IFS Community 💜
