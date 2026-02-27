@@ -3,7 +3,7 @@
   "name": "ifs-mcp-server",
   "display_name": "IFS Cloud MCP Server",
   "version": "1.0.0",
-  "description": "Connect Claude to IFS Cloud ERP via OAuth 2.0 — query data, export reports, and build reusable API guides.",
+  "description": "Connect Claude to IFS Cloud ERP and build your own agent the way you want.",
   "long_description": "## IFS Cloud MCP Server\n\nThis extension connects Claude to your IFS Cloud ERP instance using OAuth 2.0 authentication.\n\n**What you can do:**\n- Authenticate with IFS Cloud using your browser (OAuth device flow)\n- Query any IFS OData API endpoint with natural language\n- Export large result sets to CSV with automatic pagination\n- Build and share reusable API guides (skills) for common IFS projections\n- Import skills from URLs or local files — no restart needed\n\n**Getting started:**\n1. Enter your IFS Cloud URL, OAuth realm, and client ID in the settings below\n2. Ask Claude to `start_oauth` to authenticate\n3. Start querying your IFS data\n\nSee the [README](https://github.com/knakit/ifs-mcp-server-local#readme) for full setup instructions and examples.",
   "author": {
     "name": "knakit",
@@ -53,8 +53,8 @@
     },
     "skills_dir": {
       "type": "string",
-      "title": "Skills Directory (optional)",
-      "description": "Absolute path to a custom skills directory. If omitted, skills are stored inside the extension's build/resources folder.",
+      "title": "Skills Directory (optional but recommended)",
+      "description": "Absolute path to a folder where your skills (.md files) are stored. Recommended — skills saved here persist across extension updates. If omitted, skills are written inside the extension bundle and will be lost when the extension is updated.",
       "required": false
     }
   },

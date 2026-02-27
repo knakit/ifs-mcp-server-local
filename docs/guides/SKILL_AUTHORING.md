@@ -361,7 +361,7 @@ To contribute a skill to the community repository, open a pull request at [githu
 
 ### Skills work across dev and prod
 
-If you're running both a dev and a production environment (see [CONFIGURATION.md](CONFIGURATION.md)), point both server registrations to the same `SKILLS_DIR`. Skills you create or import are instantly available in both environments — you only need to build and maintain one set of skills.
+If you're running both a dev and a production environment (see [Configuration](../getting-started/CONFIGURATION.md)), point both server registrations to the same `SKILLS_DIR`. Skills you create or import are instantly available in both environments — you only need to build and maintain one set of skills.
 
 When using a skill against a specific environment, just tell Claude which server to use:
 - *"Using ifs-dev, check if customer order 100012 is released"*
