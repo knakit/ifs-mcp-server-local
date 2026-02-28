@@ -44,11 +44,15 @@
                     │                        │  │  export_api_data    │  │
                     │                        │  │  import_skill       │  │
                     │                        │  │  save_skill         │  │
+                    │                        │  │  parse_har_file     │  │
+                    │                        │  │  read_openapi_file  │  │
                     │                        │  └─────────────────────┘  │
                     │                        │                           │
                     │                        │  Prompt Registry          │
                     │                        │  ┌─────────────────────┐  │
-                    │                        │  │  build_ifs_skill_guide    │  │
+                    │                        │  │  build_from_proj.   │  │
+                    │                        │  │  build_from_har     │  │
+                    │                        │  │  build_from_openapi │  │
                     │                        │  └─────────────────────┘  │
                     │                        │                           │
                     │                        │  Resource Registry        │
@@ -133,21 +137,20 @@ All config via environment variables (see [Configuration](../getting-started/CON
 | `export_api_data` | API | Export large result sets to CSV with automatic pagination |
 | `import_skill` | Skills | Import a skill `.md` from a URL or local file path |
 | `save_skill` | Skills | Save or update a skill `.md`; returns a change diff for updates |
+| `parse_har_file` | Skill authoring | Parse a browser HAR file; returns structured summary of IFS API operations |
+| `read_openapi_file` | Skill authoring | Parse a downloaded OpenAPI/Swagger JSON file; returns entity sets and field schemas |
 
 ### 8. Prompts
 
 MCP prompts are guided conversation starters available in Claude Desktop's `+` menu. They accept arguments and return structured messages that set up a specific workflow.
 
-| Prompt | Description |
-|--------|-------------|
-| `build_ifs_skill_guide` | Builds a skill from a HAR file, a local OpenAPI/Swagger JSON file, or by fetching the spec live from IFS |
+| Prompt | Arguments | Description |
+|--------|-----------|-------------|
+| `build_ifs_skill_from_projection` | `projection_name`, `skill_name` | Fetch the OpenAPI spec live from IFS and build a skill |
+| `build_ifs_skill_from_har` | `har_file_path`, `skill_name` | Build a skill from a browser HAR recording |
+| `build_ifs_skill_from_openapi` | `openapi_file_path`, `skill_name` | Build a skill from a downloaded OpenAPI/Swagger JSON file |
 
-`build_ifs_skill_guide` accepts one of three mutually exclusive arguments:
-- `har_file_path` — calls `parseHar()` from `src/lib/har-parser.ts`, injects the structured summary
-- `openapi_file_path` — calls `parseOpenApi()` from `src/lib/openapi-parser.ts`, injects the entity/field summary
-- `projection_name` — injects instructions for Claude to call `call_protected_api` to fetch `/$openapi?V2` live, then parse and analyse the result in-context
-
-All three paths inject the same output format instructions and the same `save_skill` completion flow.
+Each prompt accepts `skill_name` (the output filename without `.md`) alongside its primary input. All three paths call `get_api_guide("ifs-skill-authoring")` to load format instructions, then invoke their respective parser tool (`parse_har_file` / `read_openapi_file` / live API fetch), and converge into the same guided Q&A and `save_skill` completion flow.
 
 ### 9. Resources
 
@@ -177,34 +180,34 @@ LLM ──tool call──> MCP Server ──get session──> Session Manager
 
 ### Skill Authoring (Capture → Refine → Make → Use)
 ```
-HAR path:
+HAR path (build_ifs_skill_from_har):
 1. CAPTURE
    User works in IFS Cloud browser UI
    DevTools Network tab ──export──> .har file
 
 2. REFINE
-   User invokes build_ifs_skill_guide(har_file_path=...) in Claude Desktop
-   MCP prompt handler ──parseHar()──> filtered operation groups
+   User invokes build_ifs_skill_from_har(har_file_path=..., skill_name=...) in Claude Desktop
+   Claude calls parse_har_file tool ──parseHar()──> filtered operation groups
    Claude presents summary ──asks clarifying questions──> User answers
 
-OpenAPI path (local file):
+OpenAPI path - local file (build_ifs_skill_from_openapi):
 1. DOWNLOAD
    User fetches {server}/.svc/$openapi?V2 from browser, saves as JSON
 
 2. REFINE
-   User invokes build_ifs_skill_guide(openapi_file_path=...) in Claude Desktop
-   MCP prompt handler ──parseOpenApi()──> entity sets + field schemas
+   User invokes build_ifs_skill_from_openapi(openapi_file_path=..., skill_name=...) in Claude Desktop
+   Claude calls read_openapi_file tool ──parseOpenApi()──> entity sets + field schemas
    Claude presents summary ──asks clarifying questions──> User answers
 
-OpenAPI path (live fetch):
+OpenAPI path - live fetch (build_ifs_skill_from_projection):
 1. REFINE (directly)
-   User invokes build_ifs_skill_guide(projection_name=CustomerHandling)
-   MCP prompt injects instructions ──Claude calls call_protected_api──> $openapi?V2 JSON
+   User invokes build_ifs_skill_from_projection(projection_name=CustomerHandling, skill_name=...)
+   Claude calls call_protected_api ──$openapi?V2──> spec JSON
    Claude extracts entity sets, fields ──asks clarifying questions──> User answers
 
 All paths converge:
 3. MAKE
-   Claude drafts .md guide ──asks for filename──> calls save_skill()
+   Claude drafts .md guide ──calls save_skill(filename=skill_name, content=...)──>
    save_skill writes to SKILLS_DIR/ (if set) or build/resources/
    (update path: reads old file ──diff──> returns change summary)
 
@@ -221,7 +224,7 @@ All paths converge:
 3. **Automatic Token Refresh** - Transparent to LLM. 5-minute expiry buffer in `getAccessToken()`.
 4. **Modular Tool Design** - Each tool exports `definition` + `handler`. Registered in `tools/index.ts`.
 5. **Resource-Driven API Knowledge** - Instead of hardcoding tools per endpoint, API guides (markdown) teach the LLM how to use `call_protected_api`. Users can add new guides without code changes.
-6. **Dual Skill Authoring Paths** - HAR-based authoring captures real browser traffic (what users actually do). OpenAPI-based authoring uses the projection's `$openapi?V2` spec (full CRUD surface with typed field schemas). HAR is better for transactional workflows; OpenAPI is better for master data. Both paths converge into the same guided Q&A and `save_skill` flow.
+6. **Three Skill Authoring Paths** - HAR-based authoring captures real browser traffic (what users actually do). OpenAPI-based authoring uses the projection's `$openapi?V2` spec (full CRUD surface with typed field schemas) — either live-fetched or from a local file. HAR is better for transactional workflows; OpenAPI is better for master data. All three paths converge into the same guided Q&A and `save_skill` flow. `skill_name` is provided upfront so Claude saves with the correct filename without asking.
 7. **Portable Skills** - Skill files are plain markdown. Export = share the file. Import = `import_skill` tool. No registry or special format needed.
 8. **Security** - Public OAuth client with PKCE (no client secret), CSRF state parameter, HTTPS-only remote skill imports, path traversal protection on skill writes, tokens stored locally.
 
@@ -240,7 +243,7 @@ src/
 │       └── token-store.ts            # In-memory storage
 ├── prompts/
 │   ├── index.ts                      # Prompt registry
-│   └── build-ifs-guide.ts            # HAR / OpenAPI → skill guided workflow
+│   └── build-ifs-skill-guide.ts      # 3 skill-building prompts (projection / HAR / OpenAPI)
 ├── resources/
 │   ├── index.ts                      # Resource registry (auto-discovery)
 │   └── ifs-common-odata-reference.md # Bundled OData syntax reference
@@ -257,7 +260,9 @@ src/
         ├── get-api-guide.ts          # Retrieve API guides from resources
         ├── export-api-data.ts        # Paginated CSV export
         ├── import-skill.ts           # Import skill from URL or file
-        └── save-skill.ts             # Save/update skill with change diff
+        ├── save-skill.ts             # Save/update skill with change diff
+        ├── parse-har-file.ts         # Parse browser HAR file for skill authoring
+        └── read-openapi-file.ts      # Parse OpenAPI/Swagger JSON for skill authoring
 ```
 
 ## Dependencies

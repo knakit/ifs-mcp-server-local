@@ -1,0 +1,2 @@
+# Exclude documentation images — large files not needed at runtime
+docs/images/
