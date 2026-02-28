@@ -50,7 +50,8 @@ There are two ways to build a skill. Choose the one that fits your workflow:
 
 ---
 
-**Building from OpenAPI (live fetch)** — the simplest path for master data projections. Just know the projection name and use the `build_ifs_skill_from_projection` prompt. No browser recording needed.
+### Building from OpenAPI (live fetch)
+The simplest path for master data projections. Just know the projection name and use the `build_ifs_skill_from_projection` prompt. No browser recording needed.
 
 ![Buils skill from Projection name](../images/claude-create-skill-projection.gif)
 
@@ -59,7 +60,8 @@ Example prompt inputs:
 - Projection name: `PartHandling` → skill name: `ifs-parts`
 - Projection name: `CustomerHandling` → skill name: `ifs-sales-customers`
 
-**Building from a HAR recording** — use this for transactional workflows. Follow the steps below.
+### Building from a HAR recording
+Use this for transactional workflows. Follow the steps below.
 
 ## Step 1 — Open IFS Cloud in Your Browser
 
