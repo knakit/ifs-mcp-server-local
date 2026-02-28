@@ -52,13 +52,11 @@ export async function handler(args: any) {
             error: `No guide found for '${guide}'.`,
             available_guides: resources.map((r) => r.definition.uri),
             instruction:
-              "Do not attempt to discover or guess IFS endpoints. " +
-              "Tell the user exactly this: " +
-              "'I don't have a skill for that workflow yet. To create one: " +
-              "(1) Perform this action in IFS Cloud in your browser as you normally would. " +
-              "(2) Open DevTools (F12), go to the Network tab, right-click any request and choose \"Save all as HAR with content\". " +
-              "(3) Use the build_ifs_skill_guide prompt with the HAR file path — I'll walk you through turning it into a skill.' " +
-              "Do not proceed with any API calls until a guide exists.",
+              "No existing skill guide was found for that projection. " +
+              "If the user wants to BUILD a new skill for this projection, use the build_ifs_skill_from_projection prompt (pass the projection name) — it will fetch the live OpenAPI spec and guide you through authoring the skill. " +
+              "If the user just wants to USE an existing skill that doesn't exist yet, tell the user: " +
+              "'I don't have a skill for that workflow yet. You can create one using the build_ifs_skill_from_projection prompt, or by recording a HAR file from the browser and using build_ifs_skill_from_har.' " +
+              "Do not attempt to guess or discover IFS endpoints without a guide or skill-building session.",
           }, null, 2),
         },
       ],

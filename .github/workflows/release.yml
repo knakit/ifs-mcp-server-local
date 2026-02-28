@@ -9,7 +9,8 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  check:
+    name: Build & Validate
     runs-on: ubuntu-latest
 
     steps:
@@ -25,14 +26,35 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
+      - name: TypeScript build
         run: npm run build
 
       - name: Install mcpb
         run: npm install -g @anthropic-ai/mcpb
 
+      - name: Validate manifest
+        run: mcpb validate .
+
       - name: Pack bundle
         run: mcpb pack .
+
+      - name: Upload bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcpb-bundle
+          path: '*.mcpb'
+          retention-days: 1
+
+  release:
+    name: Publish Release
+    runs-on: ubuntu-latest
+    needs: check
+
+    steps:
+      - name: Download bundle artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mcpb-bundle
 
       - name: Rename bundle with version
         run: mv ifs-mcp-server-local.mcpb ifs-mcp-server-${{ github.ref_name }}.mcpb

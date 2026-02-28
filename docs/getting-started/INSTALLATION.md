@@ -73,16 +73,30 @@ The server ships with a built-in OData reference guide, but to work with your sp
 
 **Quick start — build from OpenAPI spec:**
 
-Ask Claude:
-```
-Build IFS skill for projection: CustomerHandling
-Filename: ifs-customers.md
-Skill name: ifs-customers
-```
+The simplest path for master data projections. Just know the projection name and use the `build_ifs_skill_from_projection` prompt.
+
+![Buils skill from Projection name](../images/claude-create-skill-projection.gif)
+
+
+Example prompt inputs:
+- Projection name: `SupplierHandling` → skill name: `ifs-procurement-suppliers`
+- Projection name: `CustomerHandling` → skill name: `ifs-sales-customers`
 
 Claude fetches the spec from your IFS instance, asks a few questions about what the fields mean, and saves the skill automatically.
 
-**For transactional workflows** (orders, approvals, multi-step processes), use a HAR recording instead — see the [Skill Authoring Guide](../guides/SKILL_AUTHORING.md) for full instructions.
+Once the skill file is created, you can ask questions in natural language.
+
+Eg:
+
+```Show me IFS suppliers with name ABC Corp```
+
+```
+Create a new supplier in IFS
+Name: XYZ Corp
+Country: USA
+Language: English
+```
+Easy as that!
 
 ---
 

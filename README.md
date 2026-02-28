@@ -31,23 +31,14 @@ The MCP server acts as the bridge between the **skills** and IFS Cloud. In order
 
 > Skills are the brain of the agent. More skills, more things you can do!
 
-There are a few ways of creating a skill:
-* **Using the IFS projection** — Just state the IFS projection and Claude will find the OpenAPI spec for it and draft the skill for you. Once the skill is created, you can query anything in that projection through conversation. This is typically good for basic data projections.
-* **Using a recorded flow** — If you want to handle more complex flows that involve several steps and switching between multiple projections (e.g. Create a Work Task → Assign Work → Start Work), record the flow and import it into Claude. Claude will extract the steps and build a skill file from the network calls.
-* **Import a skill** — Import an existing skill `.md` file via URL or by uploading a local file.
+![Skill Lifecycle](docs/images/skill-lifecycle.svg)
 
-```
-DEFINE  →  Record a browser workflow (.har) for transactional flows, or fetch a projection's
-           OpenAPI spec for master data (customers, suppliers, parts, etc.)
-  ↓
-REFINE  →  Claude analyses what it found and asks you to explain each step in plain language
-  ↓
-MAKE    →  Claude drafts the skill file and saves it — available immediately
-  ↓
-USE     →  Ask Claude anything covered by the skill. It knows exactly how to query IFS.
-```
+There are three ways to create a skill:
+* **From a projection name** — Just give Claude the IFS projection name. It fetches the live OpenAPI spec and drafts the skill. Best for master data (customers, suppliers, parts).
+* **From a browser recording** — Record your workflow in IFS using DevTools (F12 → Network → Save as HAR). Claude extracts the API calls, asks you to explain each step, and builds the skill. Best for multi-step transactional flows.
+* **Import a skill** — Import an existing skill `.md` file directly from a URL or local path — no authoring needed.
 
-Share your awesome skills in [IFS MCP Skills](https://github.com/knakit/ifs-mcp-skills) so others can use them!
+Share your skills in [IFS MCP Skills](https://github.com/knakit/ifs-mcp-skills) so others can use them!
 
 ---
 

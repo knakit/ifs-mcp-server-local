@@ -50,16 +50,18 @@ There are two ways to build a skill. Choose the one that fits your workflow:
 
 ---
 
-To create a skill using openAPI specification, you don't need to do anything!
-Just input the projection name and ask claude to build it!
+### Building from OpenAPI (live fetch)
+The simplest path for master data projections. Just know the projection name and use the `build_ifs_skill_from_projection` prompt. No browser recording needed.
 
-Example prompt: 
-```
-Build IFS skill for projection: PartHandling
-Filename: ifs-parts.md
-Skill name: ifs-parts
-```
-Below guide is to create a skill for multi step workflows.
+![Buils skill from Projection name](../images/claude-create-skill-projection.gif)
+
+
+Example prompt inputs:
+- Projection name: `PartHandling` → skill name: `ifs-parts`
+- Projection name: `CustomerHandling` → skill name: `ifs-sales-customers`
+
+### Building from a HAR recording
+Use this for transactional workflows. Follow the steps below.
 
 ## Step 1 — Open IFS Cloud in Your Browser
 
@@ -191,7 +193,7 @@ Now hand the HAR file to Claude.
 
 2. Click the **+** icon (or the attachment/prompt button) in the chat input area
 
-3. Select **build_ifs_skill_guide** from the list of prompts
+3. Select **build_ifs_skill_from_har** from the list of prompts
 
 4. When asked, enter the **full file path** to your HAR file, for example:
    - Windows: `C:\Users\YourName\Downloads\customer-orders.har`
@@ -288,7 +290,7 @@ Use this approach for master data projections (customers, suppliers, parts) wher
 You just need to know the projection service name. Claude fetches the spec using your active IFS session.
 
 1. Open **Claude Desktop** (make sure you are authenticated to IFS — run `get_session_info` to check)
-2. Click the **+** icon and select **build_ifs_skill_guide** from the prompt list
+2. Click the **+** icon and select **build_ifs_skill_from_projection** from the prompt list
 3. In the **`projection_name`** field, enter the service name — for example:
    - `CustomerHandling`
    - `SupplierHandling`
@@ -309,7 +311,7 @@ If you prefer to inspect the spec first or work offline:
    https://your-instance.ifs.cloud/main/ifsapplications/projection/v1/CustomerHandling.svc/$openapi?V2
    ```
 3. Save the page as a `.json` file (in Chrome: **Ctrl+S**, save as *Webpage, Single File* or use the browser's save option for plain text)
-4. In Claude Desktop, select **build_ifs_skill_guide** and provide the file path in the **`openapi_file_path`** field
+4. In Claude Desktop, select **build_ifs_skill_from_openapi** and provide the file path in the **`openapi_file_path`** field
 5. Claude parses the file and proceeds as in Option A
 
 ### What the OpenAPI workflow covers
@@ -330,7 +332,7 @@ The resulting skill documents required/optional fields clearly, includes realist
 
 If IFS changes or you discover better patterns, you can update a skill:
 
-1. Run `build_ifs_skill_guide` again — with a new HAR file, a new spec file, or using live fetch
+1. Run the appropriate prompt again (`build_ifs_skill_from_projection`, `build_ifs_skill_from_har`, or `build_ifs_skill_from_openapi`)
 2. When asked for the filename, use the **same name as the existing skill**
 3. Claude will show you a summary of what changed (sections added, fields updated, examples modified)
 4. The update is saved immediately
@@ -393,7 +395,7 @@ Use the full absolute path with no quotes:
 - ❌ `my-recording.har` (not a full path)
 
 **"Live fetch says I'm not authenticated"**
-Run `get_session_info` first. If it shows no active session, run `start_oauth` to authenticate, then retry `build_ifs_skill_guide` with `projection_name`.
+Run `get_session_info` first. If it shows no active session, run `start_oauth` to authenticate, then retry `build_ifs_skill_from_projection`.
 
 **"The OpenAPI spec file failed to parse"**
 Make sure the file is a valid JSON file (not HTML). When saving from a browser, use the browser's raw text option or copy-paste the JSON content into a `.json` file. The spec must be Swagger 2.0 or OpenAPI 3.0 JSON format.
@@ -410,10 +412,10 @@ Check the URL in browser DevTools when using that IFS screen. It will contain so
 | Open developer tools | F12 |
 | Clear network log | 🚫 button in Network tab |
 | Export HAR file | Right-click any entry → Save all as HAR with content |
-| Build a skill from HAR | `build_ifs_skill_guide` with `har_file_path=...` |
-| Build a skill from live spec | `build_ifs_skill_guide` with `projection_name=CustomerHandling` |
-| Build a skill from spec file | `build_ifs_skill_guide` with `openapi_file_path=...` |
-| Update a skill | Re-run `build_ifs_skill_guide`, use the same filename |
+| Build a skill from HAR | `build_ifs_skill_from_har` → enter HAR file path |
+| Build a skill from live spec | `build_ifs_skill_from_projection` → enter projection name |
+| Build a skill from spec file | `build_ifs_skill_from_openapi` → enter spec file path |
+| Update a skill | Re-run the appropriate build prompt, use the same filename |
 | Import a shared skill | `import_skill({ source: "https://..." })` |
 | List available skills | `get_api_guide()` (no arguments) |
 | Load a skill | `get_api_guide({ guide: "ifs-customer-orders" })` |

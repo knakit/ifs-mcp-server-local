@@ -86,13 +86,34 @@
     {
       "name": "save_skill",
       "description": "Save an IFS resource guide (skill) to the skills library. For new skills, writes immediately. For existing skills, returns a summary of what changed."
+    },
+    {
+      "name": "parse_har_file",
+      "description": "Read and summarise a browser HAR file for skill authoring."
+    },
+    {
+      "name": "read_openapi_file",
+      "description": "Read and summarise a downloaded OpenAPI/Swagger JSON file for skill authoring."
     }
   ],
   "prompts": [
     {
-      "name": "build_ifs_skill_guide",
-      "description": "Build or update an IFS resource guide (skill) from a browser HAR file, a downloaded OpenAPI/Swagger spec, or by fetching the spec live from an authenticated IFS session.",
-      "text": "Build or update an IFS resource guide (skill). Provide exactly one of: har_file_path (path to a browser HAR export), openapi_file_path (path to a downloaded OpenAPI/Swagger spec), or projection_name (to fetch the spec live from an authenticated IFS session). Claude will analyse the input, draft a guide in the correct format, and save it automatically."
+      "name": "build_ifs_skill_from_projection",
+      "description": "Build an IFS skill by fetching the OpenAPI spec live for a named projection.",
+      "arguments": ["projection_name", "skill_name"],
+      "text": "I want to build an IFS resource guide for the ${arguments.projection_name} projection. The OpenAPI spec is at /main/ifsapplications/projection/v1/${arguments.projection_name}.svc/$openapi?V2. Save the skill as ${arguments.skill_name}. Please load the ifs-skill-authoring guide via get_api_guide, then fetch the spec and guide me through building the skill."
+    },
+    {
+      "name": "build_ifs_skill_from_har",
+      "description": "Build an IFS skill from a browser HAR recording.",
+      "arguments": ["har_file_path", "skill_name"],
+      "text": "I want to build an IFS resource guide from a HAR file. Save the skill as ${arguments.skill_name}. Please call parse_har_file with path ${arguments.har_file_path} to analyse it, load the ifs-skill-authoring guide via get_api_guide, then guide me through building the skill."
+    },
+    {
+      "name": "build_ifs_skill_from_openapi",
+      "description": "Build an IFS skill from a downloaded OpenAPI/Swagger spec file.",
+      "arguments": ["openapi_file_path", "skill_name"],
+      "text": "I want to build an IFS resource guide from an OpenAPI spec. Save the skill as ${arguments.skill_name}. Please call read_openapi_file with path ${arguments.openapi_file_path} to analyse it, load the ifs-skill-authoring guide via get_api_guide, then guide me through building the skill."
     }
   ],
   "compatibility": {

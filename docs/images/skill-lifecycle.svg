@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 510" font-family="system-ui,-apple-system,'Segoe UI',sans-serif">
+  <defs>
+    <!-- Subtle card shadow -->
+    <filter id="sh" x="-8%" y="-8%" width="116%" height="132%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="3" flood-color="#1E2A4A" flood-opacity="0.10"/>
+    </filter>
+
+    <!-- Arrow markers -->
+    <marker id="mu" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0,9 3,0 6" fill="#7090B8"/>
+    </marker>
+    <marker id="mt" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0,9 3,0 6" fill="#4A9280"/>
+    </marker>
+    <marker id="mb" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0,9 3,0 6" fill="#5878B8"/>
+    </marker>
+    <marker id="mp" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0,9 3,0 6" fill="#7050A8"/>
+    </marker>
+    <marker id="mq" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0,9 3,0 6" fill="#9060C0"/>
+    </marker>
+    <marker id="mn" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0,9 3,0 6" fill="#8AA0B8"/>
+    </marker>
+  </defs>
+
+  <!-- ── Page background ── -->
+  <rect width="860" height="510" fill="#F0F2F8" rx="14"/>
+
+  <!-- ── Title ── -->
+  <text x="430" y="33" text-anchor="middle" font-size="15" font-weight="600" fill="#1C2A44" letter-spacing="0.2">IFS Cloud MCP Server — Skill Lifecycle</text>
+
+  <!-- ══════════════════════════════════════
+       CREATE SECTION  (blue family)
+       ══════════════════════════════════════ -->
+  <rect x="14" y="44" width="832" height="284" rx="12" fill="#E4EAF7" stroke="#BCCADF" stroke-width="1"/>
+  <text x="430" y="64" text-anchor="middle" font-size="10" font-weight="600" fill="#4A6898" letter-spacing="2.5">① CREATE A SKILL</text>
+
+  <!-- Input box 1 — HAR Recording -->
+  <rect x="36" y="74" width="196" height="80" rx="10" fill="#FFFFFF" stroke="#90A8C8" stroke-width="1" filter="url(#sh)"/>
+  <rect x="36" y="86" width="3" height="56" rx="1.5" fill="#4878B0"/>
+  <text x="136" y="98" text-anchor="middle" font-size="12" font-weight="600" fill="#1C2C44">Browser Recording</text>
+  <text x="136" y="115" text-anchor="middle" font-size="11" fill="#5A7090">HAR file from DevTools</text>
+  <rect x="52" y="123" width="164" height="18" rx="5" fill="#E0E8F5"/>
+  <text x="134" y="136" text-anchor="middle" font-size="9" fill="#2C4C7C" font-family="monospace">build_ifs_skill_from_har</text>
+
+  <!-- Input box 2 — Projection Name -->
+  <rect x="332" y="74" width="196" height="80" rx="10" fill="#FFFFFF" stroke="#90A8C8" stroke-width="1" filter="url(#sh)"/>
+  <rect x="332" y="86" width="3" height="56" rx="1.5" fill="#4878B0"/>
+  <text x="432" y="98" text-anchor="middle" font-size="12" font-weight="600" fill="#1C2C44">Projection Name</text>
+  <text x="432" y="115" text-anchor="middle" font-size="11" fill="#5A7090">live OpenAPI fetch from IFS</text>
+  <rect x="338" y="123" width="184" height="18" rx="5" fill="#E0E8F5"/>
+  <text x="430" y="136" text-anchor="middle" font-size="9" fill="#2C4C7C" font-family="monospace">build_ifs_skill_from_projection</text>
+
+  <!-- Input box 3 — OpenAPI Spec File -->
+  <rect x="628" y="74" width="196" height="80" rx="10" fill="#FFFFFF" stroke="#90A8C8" stroke-width="1" filter="url(#sh)"/>
+  <rect x="628" y="86" width="3" height="56" rx="1.5" fill="#4878B0"/>
+  <text x="728" y="98" text-anchor="middle" font-size="12" font-weight="600" fill="#1C2C44">OpenAPI Spec File</text>
+  <text x="728" y="115" text-anchor="middle" font-size="11" fill="#5A7090">downloaded .json file</text>
+  <rect x="640" y="123" width="172" height="18" rx="5" fill="#E0E8F5"/>
+  <text x="726" y="136" text-anchor="middle" font-size="9" fill="#2C4C7C" font-family="monospace">build_ifs_skill_from_openapi</text>
+
+  <!-- Convergence lines → horizontal bar at y=170 → arrow to Claude -->
+  <polyline points="134,154 134,170 430,170" fill="none" stroke="#7090B8" stroke-width="1.2"/>
+  <line x1="430" y1="154" x2="430" y2="170" stroke="#7090B8" stroke-width="1.2"/>
+  <polyline points="726,154 726,170 430,170" fill="none" stroke="#7090B8" stroke-width="1.2"/>
+  <line x1="430" y1="170" x2="430" y2="186" stroke="#7090B8" stroke-width="1.2" marker-end="url(#mu)"/>
+
+  <!-- Claude + Skill Building box (indigo-blue) -->
+  <rect x="278" y="186" width="304" height="68" rx="10" fill="#EBF0FC" stroke="#6882C0" stroke-width="1" filter="url(#sh)"/>
+  <rect x="278" y="198" width="3" height="44" rx="1.5" fill="#4060A8"/>
+  <text x="432" y="210" text-anchor="middle" font-size="12" font-weight="600" fill="#1A2858">Claude + Skill Building Guide</text>
+  <text x="432" y="228" text-anchor="middle" font-size="10.5" fill="#4468A8">Guided Q&amp;A · refine fields, examples, workflows</text>
+  <text x="432" y="244" text-anchor="middle" font-size="9.5" fill="#7888BE">skill_name provided upfront · ifs-skill-authoring guide loaded</text>
+
+  <!-- Arrow to Skill File (teal) -->
+  <line x1="430" y1="254" x2="430" y2="268" stroke="#4A9280" stroke-width="1.5" marker-end="url(#mt)"/>
+
+  <!-- Skill File box (teal) -->
+  <rect x="308" y="268" width="244" height="52" rx="10" fill="#E8F5F0" stroke="#6AAA98" stroke-width="1" filter="url(#sh)"/>
+  <rect x="308" y="280" width="3" height="28" rx="1.5" fill="#3C8870"/>
+  <text x="432" y="292" text-anchor="middle" font-size="13" font-weight="600" fill="#1A4838">Skill File  (.md)</text>
+  <text x="432" y="310" text-anchor="middle" font-size="10.5" fill="#3C8870">saved instantly · available immediately · no restart</text>
+
+  <!-- ══════════════════════════════════════
+       USE SECTION  (echoes IFS purple)
+       ══════════════════════════════════════ -->
+  <rect x="14" y="342" width="832" height="157" rx="12" fill="#EDE8F5" stroke="#C4B8DC" stroke-width="1"/>
+  <text x="430" y="361" text-anchor="middle" font-size="10" font-weight="600" fill="#6A3399" letter-spacing="2.5">② USE THE SKILL</text>
+
+  <!-- User box (neutral) -->
+  <rect x="30" y="371" width="152" height="60" rx="10" fill="#FFFFFF" stroke="#A8B8CC" stroke-width="1" filter="url(#sh)"/>
+  <text x="106" y="395" text-anchor="middle" font-size="12" font-weight="600" fill="#283848">User</text>
+  <text x="106" y="412" text-anchor="middle" font-size="10.5" fill="#5C7088">"show open orders"</text>
+  <text x="106" y="426" text-anchor="middle" font-size="9.5" fill="#8AA0B4">natural language</text>
+
+  <!-- Arrow User → Claude Desktop -->
+  <line x1="182" y1="401" x2="218" y2="401" stroke="#8AA0B8" stroke-width="1.2" marker-end="url(#mn)"/>
+
+  <!-- Claude Desktop box (blue) -->
+  <rect x="218" y="371" width="168" height="60" rx="10" fill="#EBF0FC" stroke="#6882C0" stroke-width="1" filter="url(#sh)"/>
+  <rect x="218" y="383" width="3" height="36" rx="1.5" fill="#4060A8"/>
+  <text x="304" y="395" text-anchor="middle" font-size="12" font-weight="600" fill="#1A2858">Claude Desktop</text>
+  <text x="304" y="412" text-anchor="middle" font-size="10.5" fill="#4468A8">loads skill via</text>
+  <text x="304" y="426" text-anchor="middle" font-size="9.5" fill="#7888BE" font-family="monospace">get_api_guide</text>
+
+  <!-- Arrow Claude Desktop → MCP Server -->
+  <line x1="386" y1="401" x2="422" y2="401" stroke="#5878B8" stroke-width="1.2" marker-end="url(#mb)"/>
+
+  <!-- MCP Server box (deeper blue) -->
+  <rect x="422" y="371" width="168" height="60" rx="10" fill="#EEF2FC" stroke="#7890CC" stroke-width="1" filter="url(#sh)"/>
+  <rect x="422" y="383" width="3" height="36" rx="1.5" fill="#5070B0"/>
+  <text x="506" y="395" text-anchor="middle" font-size="12" font-weight="600" fill="#1E2E5A">MCP Server</text>
+  <text x="506" y="412" text-anchor="middle" font-size="10.5" fill="#5070B0">calls IFS via</text>
+  <text x="506" y="426" text-anchor="middle" font-size="9.5" fill="#8098C8" font-family="monospace">call_protected_api</text>
+
+  <!-- Arrow MCP Server → IFS Cloud (purple) -->
+  <line x1="590" y1="401" x2="628" y2="401" stroke="#7050A8" stroke-width="1.2" marker-end="url(#mp)"/>
+
+  <!-- IFS Cloud box — solid IFS purple, stands out from section -->
+  <rect x="628" y="371" width="168" height="60" rx="10" fill="#6A3399" stroke="#4A1A78" stroke-width="1" filter="url(#sh)"/>
+  <text x="712" y="393" text-anchor="middle" font-size="12" font-weight="700" fill="#FFFFFF">IFS Cloud</text>
+  <text x="712" y="410" text-anchor="middle" font-size="10.5" fill="#D8B4F8">OAuth 2.0 · OData</text>
+  <text x="712" y="424" text-anchor="middle" font-size="9.5" fill="#C090EC">REST API response</text>
+
+  <!-- Return arrow: IFS Cloud → under boxes → User (purple dashed) -->
+  <polyline points="712,431 712,457 106,457 106,432" fill="none" stroke="#9060C0" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#mq)"/>
+  <text x="409" y="473" text-anchor="middle" font-size="10" fill="#7050A8">results returned to user</text>
+
+  <!-- Skill File → Claude Desktop dashed connector (teal) -->
+  <polyline points="430,320 430,332 302,332 302,371" fill="none" stroke="#4A9280" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#mt)"/>
+  <rect x="340" y="325" width="68" height="15" rx="4" fill="#E0F0EC"/>
+  <text x="374" y="336" text-anchor="middle" font-size="9.5" fill="#3C8870">on demand</text>
+
+  <!-- Footer separator + share note -->
+  <line x1="14" y1="500" x2="846" y2="500" stroke="#C8C0D8" stroke-width="0.8"/>
+  <text x="430" y="494" text-anchor="middle" font-size="10" fill="#7868A0">
+    Share skills:
+    <tspan font-family="monospace" fill="#3A2460"> import_skill({ source: "https://..." }) </tspan>
+    · Community: github.com/knakit/ifs-mcp-skills
+  </text>
+</svg>
