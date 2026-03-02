@@ -27,8 +27,3 @@ To keep your skills permanently, set the **Skills Directory** to a folder on you
 
 ---
 
-## Security Notes
-
-- This tool uses a **public OAuth client** with PKCE — no client secret is required or stored
-- Session tokens are stored locally in `~/.ifs-mcp/session.json`
-- See [SECURITY.md](../../SECURITY.md) for full data handling details

@@ -1,6 +1,8 @@
-# How to Build an IFS Skill
+# How to Build an IFS Skill for Claude
 
 A **skill** is a small instruction file that teaches the AI assistant how to work with a specific part of IFS Cloud. Without a skill, the AI doesn't know which screens, fields, or API calls are involved in a particular workflow. With one, you can simply say things like *"show me all open customer orders"* or *"create a purchase order for this supplier"* and the assistant handles the rest.
+
+![How to create a skill](../images/how-to-create-a-skill.svg)
 
 This guide walks you through creating a skill from scratch — no technical knowledge required.
 
@@ -22,7 +24,7 @@ There are two ways to build a skill. Choose the one that fits your workflow:
 | Method | Best for | What you provide |
 |--------|----------|-----------------|
 | **HAR recording** | Transactional workflows — orders, approvals, multi-step processes | A `.har` file captured from browser DevTools |
-| **OpenAPI spec** | Master data — customers, suppliers, parts, sites | The projection service name (live fetch) or a downloaded spec file |
+| **OpenAPI spec** | Master data — customers, suppliers, parts, sites, etc. | The projection service name (live fetch) or a downloaded spec file |
 
 **Use HAR** when the workflow involves specific sequences of actions (e.g. create header → add lines → release order). The recording captures exactly what your users do and with which fields.
 
@@ -63,7 +65,7 @@ Example prompt inputs:
 ### Building from a HAR recording
 Use this for transactional workflows. Follow the steps below.
 
-## Step 1 — Open IFS Cloud in Your Browser
+#### Step 1 — Open IFS Cloud in Your Browser
 
 Open Chrome or Edge and navigate to your IFS Cloud instance. Log in as you normally would.
 
@@ -71,7 +73,7 @@ Open Chrome or Edge and navigate to your IFS Cloud instance. Log in as you norma
 
 ---
 
-## Step 2 — Open Developer Tools
+#### Step 2 — Open Developer Tools
 
 Developer tools let the browser record which API calls IFS makes in the background when you perform actions.
 
@@ -87,7 +89,7 @@ A panel will appear — either at the bottom or the right side of your browser w
 
 ---
 
-## Step 3 — Set Up the Network Tab
+#### Step 3 — Set Up the Network Tab
 
 The **Network** tab records API traffic. You need to get it ready before performing your workflow.
 
@@ -108,7 +110,7 @@ Your setup should now look something like this:
 
 ---
 
-## Step 4 — Perform Your Workflow in IFS
+#### Step 4 — Perform Your Workflow in IFS
 
 Now do exactly the actions you want to teach the AI. Be deliberate and focused:
 
@@ -133,7 +135,7 @@ The more focused your recording, the better the resulting skill.
 
 ---
 
-## Step 5 — Export the HAR File
+#### Step 5 — Export the HAR File
 
 Once you've finished your workflow:
 
@@ -150,9 +152,8 @@ That's your recording — a `.har` file containing everything IFS did in the bac
 
 ---
 
-## Tips to Keep the HAR File Small
-
-HAR files can get large if you're not careful. Large files take longer to process and can slow down skill creation. Here's how to keep them manageable:
+> [!TIP]
+> HAR files can get large if you're not careful. Large files take longer to process and can slow down skill creation. Here's how to keep them manageable:
 
 ### Before you record
 - ✅ **Clear the network log first** (the 🚫 button) — this removes any requests from when you were setting up
@@ -185,7 +186,7 @@ HAR files can get large if you're not careful. Large files take longer to proces
 
 ---
 
-## Step 6 — Build the Skill with Claude
+#### Step 6 — Build the Skill with Claude
 
 Now hand the HAR file to Claude.
 
@@ -216,7 +217,7 @@ Now hand the HAR file to Claude.
 
 ---
 
-## Step 7 — Review and Save
+#### Step 7 — Review and Save
 
 After the Q&A:
 

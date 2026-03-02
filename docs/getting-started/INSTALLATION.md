@@ -29,7 +29,10 @@ In IFS Cloud, navigate to: **Access Control → Identity and Access Manager → 
 
 ---
 ## Step 2 - Create the skills directory
-Community maintained skills can be found in the github repository [IFS Skills](https://github.com/knakit/ifs-mcp-skills). You can clone the repository or create an empty folder to same the skill files.
+Create a folder in your PC to save the skill files.
+
+> [!TIP]
+> Community maintained skills can be found in the github repository [IFS Skills](https://github.com/knakit/ifs-mcp-skills). You can download them and use the skill folder. 
 
 ## Step 3 — Install the Extension
 
@@ -54,16 +57,16 @@ Download the latest `ifs-mcp-server.mcpb` from the [GitHub Releases](https://git
 
 ## Step 4 — Authenticate
 
-1. In Claude Desktop, ask Claude to run `start_oauth`
+1. In Claude Desktop, ask Claude to login to IFS. *(Yes, it's that simple!)*
 2. A browser window opens — log in with your IFS Cloud credentials
-3. After successful login, the browser shows a confirmation and you can close it
-4. Your session is saved automatically and persists across restarts
+3. After successful login, the browser shows a confirmation and you can close it.
+4. Say ```done``` or something similar to let Claude know you have completed the login.
 
 **Verify it worked:**
-```
-Ask Claude: "Run get_session_info"
-```
-You should see an active session with your IFS Cloud instance.
+
+Ask Claude: *Check the IFS session status*
+
+Claude will show the session information and the status.
 
 ---
 

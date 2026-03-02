@@ -13,30 +13,42 @@ Connect Claude to your IFS Cloud instance and interact with your ERP through nat
 
 ## The Idea
 
-What if you could automate your IFS Cloud workflows without buying anything extra? No new subscriptions, no new platforms, no developers needed.
+What if you could automate your IFS Cloud tasks without buying anything extra? No new subscriptions, no new platforms, no developers needed.
 
-Install the extension, teach Claude the skills, and let it handle the repetitive queries, lookups, and data exports — all from a conversation. Think of it as a coworker who never gets tired of the repetitive stuff.
+Install the extension, teach Claude some IFS skills, and then use it in your everyday life. Think of it as a coworker who never gets tired of the repetitive stuff.
 
 The best part? You stay in control. You decide what the agent knows, how it behaves, and what it can do — the possibilities are only limited by your imagination.
 
-![IFS MCP Server Demo 1](/docs/images/ifs-demo-skills-summary.gif)
-
 ![IFS MCP Server Demo 2](/docs/images/ifs-demo-customer-search.gif)
 
+> [!NOTE]
+> This product is not affiliated with IFS. It is a personal project by [Damith](https://dsj23.me). 
+
+> [!WARNING]
+> This product is not a production-ready solution and should not be used in a production environment. It is a proof of concept for creating a personal AI agent for IFS.
 ---
 
 ## How It Works
 
-The MCP server acts as the bridge between the **skills** and IFS Cloud. In order to make the tool useful, you need to create the skills so Claude can use them to call IFS endpoints to perform the work.
+Think of the IFS MCP server as a broker between Claude LLM and IFS Cloud. It can translate your questions into IFS API calls and bring the data from IFS. In order to understand what IFS Cloud API to call and to construct the message, it needs to know about the IFS endpoint metadata, what we call as **skills**. 
 
-> Skills are the brain of the agent. More skills, more things you can do!
+![IFS MCP outlook](docs/images/if-mcp-server-outlook.svg)
 
-![Skill Lifecycle](docs/images/skill-lifecycle.svg)
+### What is a Skill?
 
-There are three ways to create a skill:
+**Skill** is a plain text `.md` file which contains instructions on IFS endpoints, their usage and the data structures. MCP server has instructions to create the file. You just need to tell it what you need!
+
+There are several ways of creating a skill:
 * **From a projection name** — Just give Claude the IFS projection name. It fetches the live OpenAPI spec and drafts the skill. Best for master data (customers, suppliers, parts).
 * **From a browser recording** — Record your workflow in IFS using DevTools (F12 → Network → Save as HAR). Claude extracts the API calls, asks you to explain each step, and builds the skill. Best for multi-step transactional flows.
-* **Import a skill** — Import an existing skill `.md` file directly from a URL or local path — no authoring needed.
+* **Import a skill** — If a friend or colleague has created an awesome skill, you can import that skill directly from a URL or local path. Have a look in the [communty IFS MCP skills](https://github.com/knakit/ifs-mcp-skills). You might find some useful skills.
+
+Once you have the **skill** created, use it to perform any action supported by the skill.
+
+> Eg: If you create a skill from PartHandling projection, you can perform any operation related to parts just by telling claude! 
+
+Skills are the brain of the agent. More skills, more things you can do!
+
 
 Share your skills in [IFS MCP Skills](https://github.com/knakit/ifs-mcp-skills) so others can use them!
 
@@ -44,9 +56,11 @@ Share your skills in [IFS MCP Skills](https://github.com/knakit/ifs-mcp-skills) 
 
 ## Quick Start
 
-Download the latest `ifs-mcp-server.mcpb` from [GitHub Releases](https://github.com/knakit/ifs-mcp-server-local/releases) and install it in Claude Desktop:
+* Download the latest `ifs-mcp-server.mcpb` from [GitHub Releases](https://github.com/knakit/ifs-mcp-server-local/releases) and add it as an extension in Claude desktop.
+* Build your first skill.
+* Now it's ready to use to perform your IFS tasks in Claude desktop!
 
-> **[See the installation guide →](docs/getting-started/INSTALLATION.md)** — OAuth client setup, configuration, first authentication, and building your first skill.
+> **[See the installation guide →](docs/getting-started/INSTALLATION.md)** for complete instructions on IFS OAuth client setup, configuration, first authentication, and building your first skill.
 
 ---
 
