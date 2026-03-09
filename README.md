@@ -22,10 +22,10 @@ The best part? You stay in control. You decide what the agent knows, how it beha
 ![IFS MCP Server Demo 2](/docs/images/ifs-demo-customer-search.gif)
 
 > [!NOTE]
-> This product is not affiliated with IFS. It is a personal project by [Damith](https://dsj23.me). 
+> This product is not affiliated with IFS. It is a personal project by [Damith Jinasena](https://dsj23.me). 
 
 > [!WARNING]
-> This product is not a production-ready solution and should not be used in a production environment. It is a proof of concept for creating a personal AI agent for IFS.
+> This product is NOT tested in a production environment. It is still a proof of concept for creating a personal AI agent for IFS.
 ---
 
 ## How It Works
