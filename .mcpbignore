@@ -1,2 +1,17 @@
 # Exclude documentation images — large files not needed at runtime
 docs/images/
+
+# Exclude mcpb bundles themselves
+*.mcpb
+*.mcpb.old
+
+# Exclude local IDE/tool settings
+.claude/
+.vscode/
+
+# Exclude TypeScript source (build output is sufficient)
+/src/
+
+# Exclude dev/config files
+tsconfig.json
+*.log

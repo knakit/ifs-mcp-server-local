@@ -7,6 +7,11 @@ import os from "os";
 
 export const definition: Tool = {
   name: "export_api_data",
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: false,
+    openWorldHint: true,
+  },
   description:
     "Export large API result sets to a CSV file. Fetches data in batches of 100 records using $top/$skip pagination and saves to ~/.ifs-mcp/exports/. Use this when call_protected_api returns a 'Response too large' warning.",
   inputSchema: {

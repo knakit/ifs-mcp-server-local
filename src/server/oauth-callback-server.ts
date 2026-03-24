@@ -12,7 +12,11 @@ function escapeHtml(str: string): string {
     .replace(/'/g, "&#x27;");
 }
 
+let callbackServerStarted = false;
+
 export function startCallbackServer(oauthManager: OAuthManager) {
+  if (callbackServerStarted) return;
+  callbackServerStarted = true;
   const app = express();
 
   app.get("/oauth/callback", async (req, res) => {
@@ -62,7 +66,7 @@ export function startCallbackServer(oauthManager: OAuthManager) {
     }
   });
 
-  const server = app.listen(3000);
+  const server = app.listen(3000, '127.0.0.1');
   server.on('error', (err: NodeJS.ErrnoException) => {
     if (err.code === 'EADDRINUSE') {
       // Port already in use, callback server already running

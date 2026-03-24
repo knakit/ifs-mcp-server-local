@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "ifs-mcp-server",
   "display_name": "IFS Cloud MCP Server",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Connect Claude to IFS Cloud ERP and build your own agent the way you want.",
   "long_description": "## IFS Cloud MCP Server\n\nThis extension connects Claude to your IFS Cloud ERP instance using OAuth 2.0 authentication.\n\n**What you can do:**\n- Authenticate with IFS Cloud using your browser (OAuth device flow)\n- Query any IFS OData API endpoint with natural language\n- Export large result sets to CSV with automatic pagination\n- Build and share reusable API guides (skills) for common IFS projections\n- Import skills from URLs or local files — no restart needed\n\n**Getting started:**\n1. Enter your IFS Cloud URL, OAuth realm, and client ID in the settings below\n2. Ask Claude to `start_oauth` to authenticate\n3. Start querying your IFS data\n\nSee the [README](https://github.com/knakit/ifs-mcp-server-local#readme) for full setup instructions and examples.",
   "author": {
@@ -61,7 +61,7 @@
   "tools": [
     {
       "name": "start_oauth",
-      "description": "Start OAuth 2.0 authentication flow. Checks for active session and opens a login window if needed."
+      "description": "Start OAuth 2.0 authentication flow — opens a login window in the browser. Call this automatically whenever an API tool returns an authentication_required error or session expiry. Do not ask the user to trigger this manually."
     },
     {
       "name": "get_session_info",
@@ -69,11 +69,11 @@
     },
     {
       "name": "call_protected_api",
-      "description": "Call a protected IFS Cloud API endpoint using an authenticated session."
+      "description": "Call a protected IFS Cloud API endpoint using an authenticated session. Requires get_api_guide to be called first — IFS endpoint paths are non-standard and cannot be guessed. If response contains authentication_required error, immediately call start_oauth."
     },
     {
       "name": "get_api_guide",
-      "description": "Get the API guide for a specific IFS projection. Call this before using call_protected_api to learn the correct endpoints, OData syntax, and query patterns."
+      "description": "Look up the skill guide for an IFS workflow. IFS endpoint paths and field names are non-standard — call this first with a keyword before using call_protected_api. Call without arguments to list all available guides."
     },
     {
       "name": "export_api_data",
@@ -115,6 +115,9 @@
       "arguments": ["openapi_file_path", "skill_name"],
       "text": "I want to build an IFS resource guide from an OpenAPI spec. Save the skill as ${arguments.skill_name}. Please call read_openapi_file with path ${arguments.openapi_file_path} to analyse it, load the ifs-skill-authoring guide via get_api_guide, then guide me through building the skill."
     }
+  ],
+  "privacy_policies": [
+    "https://github.com/knakit/ifs-mcp-server-local/blob/main/PRIVACY.md"
   ],
   "compatibility": {
     "platforms": ["darwin", "win32"],

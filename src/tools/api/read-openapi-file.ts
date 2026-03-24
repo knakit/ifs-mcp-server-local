@@ -3,6 +3,11 @@ import { parseOpenApi, summariseOpenApi } from "../../lib/openapi-parser.js";
 
 export const definition: Tool = {
   name: "read_openapi_file",
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: false,
+  },
   description:
     "Read and summarise a downloaded OpenAPI/Swagger JSON file for skill authoring. " +
     "Returns a structured summary of the entity sets, methods, and properties found in the spec.",

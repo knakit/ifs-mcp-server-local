@@ -9,7 +9,6 @@ dotenv.config({ path: path.resolve(__dirname, "..", ".env"), quiet: true });
 
 import { OAuthManager } from "./lib/auth/oauth-manager.js";
 import { initializeTokenStore } from "./lib/auth/session-manager.js";
-import { startCallbackServer } from "./server/oauth-callback-server.js";
 import { OAuthMCPServer } from "./server/mcp-server.js";
 
 // Initialize OAuth manager
@@ -17,9 +16,6 @@ const oauthManager = new OAuthManager();
 
 // Initialize sessions from storage
 initializeTokenStore();
-
-// Start the OAuth callback server
-startCallbackServer(oauthManager);
 
 // Start the MCP server
 const mcpServer = new OAuthMCPServer(oauthManager);

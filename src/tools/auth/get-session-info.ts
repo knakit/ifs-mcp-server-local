@@ -5,6 +5,11 @@ import { tokenStore } from "../../lib/auth/token-store.js";
 export const definition: Tool = {
   name: "get_session_info",
   description: "Get information about the current saved session, including session ID and expiration status.",
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: false,
+  },
   inputSchema: {
     type: "object",
     properties: {},

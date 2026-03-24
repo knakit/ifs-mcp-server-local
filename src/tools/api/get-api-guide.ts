@@ -3,7 +3,12 @@ import { getResources } from "../../resources/index.js";
 
 export const definition: Tool = {
   name: "get_api_guide",
-  description: "Get the API guide for a specific IFS projection. Call this before using call_protected_api to learn the correct endpoints, OData syntax, and query patterns. Call without arguments to list all available guides.",
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: false,
+  },
+  description: "Look up the skill guide for an IFS workflow before querying the API. IFS Cloud endpoint paths, projection names, key fields, and OData filter syntax are customer-specific and non-standard — they cannot be inferred from general OData or REST knowledge. Call this first with a keyword (e.g. 'customer', 'sales', 'parts') to get the correct endpoints and query patterns. Call without arguments to list all available guides.",
   inputSchema: {
     type: "object",
     properties: {

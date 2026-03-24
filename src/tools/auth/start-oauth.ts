@@ -5,11 +5,17 @@ import { tokenStore } from "../../lib/auth/token-store.js";
 import fs from "fs";
 import path from "path";
 import os from "os";
-import { exec } from "child_process";
+import { execFile } from "child_process";
+import { startCallbackServer } from "../../server/oauth-callback-server.js";
 
 export const definition: Tool = {
   name: "start_oauth",
-  description: "Start OAuth 2.0 authentication flow. Checks for active session and opens a login window if needed.",
+  description: "Start OAuth 2.0 authentication flow — opens a login window in the browser. Call this automatically whenever an API tool returns an authentication_required error or session expiry. Do not ask the user to trigger this manually.",
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: false,
+    openWorldHint: true,
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -23,21 +29,20 @@ export const definition: Tool = {
 
 function openBrowser(url: string) {
   const platform = process.platform;
-  let command: string;
 
   if (platform === 'win32') {
-    command = `start "" "${url}"`;
+    execFile('cmd.exe', ['/c', 'start', '', url], (error) => {
+      if (error) console.error('Failed to open browser:', error);
+    });
   } else if (platform === 'darwin') {
-    command = `open "${url}"`;
+    execFile('open', [url], (error) => {
+      if (error) console.error('Failed to open browser:', error);
+    });
   } else {
-    command = `xdg-open "${url}"`;
+    execFile('xdg-open', [url], (error) => {
+      if (error) console.error('Failed to open browser:', error);
+    });
   }
-
-  exec(command, (error) => {
-    if (error) {
-      console.error('Failed to open browser:', error);
-    }
-  });
 }
 
 function createLoginPage(authUrl: string, state: string): string {
@@ -256,6 +261,9 @@ export async function handler(args: any, oauthManager: OAuthManager) {
 
   // Start OAuth flow
   const { authUrl, state } = oauthManager.startAuthFlow();
+
+  // Start the OAuth callback server on-demand (binds to 127.0.0.1:3000)
+  startCallbackServer(oauthManager);
 
   // Create and open login page
   const htmlPath = createLoginPage(authUrl, state);

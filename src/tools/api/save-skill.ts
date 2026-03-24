@@ -13,6 +13,11 @@ function getResourcesDir(): string {
 
 export const definition: Tool = {
   name: "save_skill",
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: false,
+  },
   description:
     "Save an IFS resource guide (skill) to the skills library. " +
     "For new skills, writes immediately. For existing skills, writes the update and returns a summary of what changed. " +
