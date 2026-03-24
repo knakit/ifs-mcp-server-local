@@ -17,6 +17,11 @@ const MAX_REDIRECTS = 3;
 
 export const definition: Tool = {
   name: "import_skill",
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true,
+  },
   description:
     "Import an IFS resource guide (skill) from an HTTPS URL or local file path and make it available immediately. " +
     "Useful for sharing skills between users — share the .md file and others can import it with this tool. " +

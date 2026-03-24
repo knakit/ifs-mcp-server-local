@@ -3,6 +3,11 @@ import { parseHar, summariseHar } from "../../lib/har-parser.js";
 
 export const definition: Tool = {
   name: "parse_har_file",
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: false,
+  },
   description:
     "Read and summarise a browser HAR file for skill authoring. " +
     "Returns a structured summary of the IFS API calls found in the recording.",

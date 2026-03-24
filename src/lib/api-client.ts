@@ -36,8 +36,8 @@ export async function callProtectedApi(
   if (!sessionId) {
     return {
       success: false,
-      error: "No session found",
-      message: "Please authenticate first using the start_oauth tool",
+      error: "authentication_required",
+      message: "No active session. Call the start_oauth tool now to open the login window — do not ask the user to do this manually.",
     };
   }
 
@@ -68,9 +68,18 @@ export async function callProtectedApi(
     };
   } catch (error) {
     if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      if (status === 401 || status === 403) {
+        return {
+          success: false,
+          status,
+          error: "authentication_required",
+          message: "Session expired or unauthorised. Call the start_oauth tool now to re-authenticate — do not ask the user to do this manually.",
+        };
+      }
       return {
         success: false,
-        status: error.response?.status,
+        status,
         error: "API call failed",
         message: error.response?.data || error.message,
         details: error.response?.data?.error || null,

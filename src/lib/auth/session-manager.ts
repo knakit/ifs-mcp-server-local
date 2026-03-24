@@ -8,9 +8,9 @@ import { tokenStore } from "./token-store.js";
 const SESSION_DIR = path.join(os.homedir(), '.ifs-mcp');
 const SESSION_FILE = path.join(SESSION_DIR, 'session.json');
 
-// Ensure session directory exists
+// Ensure session directory exists with restrictive permissions (0700 on Unix)
 if (!fs.existsSync(SESSION_DIR)) {
-  fs.mkdirSync(SESSION_DIR, { recursive: true });
+  fs.mkdirSync(SESSION_DIR, { recursive: true, mode: 0o700 });
 }
 
 // Load existing sessions from file
@@ -35,6 +35,7 @@ export function saveSession(sessionId: string, sessionData: TokenData) {
 
     const sessionsObj = Object.fromEntries(sessions);
     fs.writeFileSync(SESSION_FILE, JSON.stringify(sessionsObj, null, 2));
+    fs.chmodSync(SESSION_FILE, 0o600);
   } catch (error) {
     // Silent fail - session will still work in memory
   }
