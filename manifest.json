@@ -1,9 +1,9 @@
 {
   "manifest_version": "0.3",
   "name": "ifs-mcp-server",
-  "display_name": "IFS Cloud MCP Server",
+  "display_name": "MCP Server for IFS Cloud",
   "version": "1.2.0",
-  "description": "Open Source Claude extention for IFS Cloud.",
+  "description": "An open source MCP server that gives Claude access to your IFS Cloud ERP instance.",
   "long_description": "## IFS Cloud MCP Server\n\nThis extension connects Claude to your IFS Cloud ERP instance using OAuth 2.0 authentication.\n\n**What you can do:**\n- Authenticate with IFS Cloud using your browser (OAuth device flow)\n- Query any IFS OData API endpoint with natural language\n- Export large result sets to CSV with automatic pagination\n- Build and share reusable API guides (skills) for common IFS projections\n- Import skills from URLs or local files — no restart needed\n\n**Getting started:**\n1. Enter your IFS Cloud URL, OAuth realm, and client ID in the settings below\n2. Ask Claude to `start_oauth` to authenticate\n3. Start querying your IFS data\n\nSee the [README](https://github.com/knakit/ifs-mcp-server-local#readme) for full setup instructions and examples.",
   "icon": "icon.png",
   "author": {
