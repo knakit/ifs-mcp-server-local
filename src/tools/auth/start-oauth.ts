@@ -95,9 +95,7 @@ function createLoginPage(authUrl: string, state: string): string {
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 36px;
-      color: white;
-      font-weight: bold;
+      font-size: 32px;
     }
 
     h1 {
@@ -193,8 +191,8 @@ function createLoginPage(authUrl: string, state: string): string {
 </head>
 <body>
   <div class="container">
-    <div class="logo">IFS</div>
-    <h1>Welcome to IFS Cloud</h1>
+    <div class="logo">🔐</div>
+    <h1>Connect to your IFS Cloud instance</h1>
     <p class="subtitle">Sign in to access your protected resources through the MCP server</p>
 
     <div class="info-box">
