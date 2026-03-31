@@ -1,4 +1,4 @@
-# Contributing to IFS MCP Server
+# Contributing to MCP Server for IFS Cloud
 
 Thank you for your interest in contributing. There are three main ways to help:
 
