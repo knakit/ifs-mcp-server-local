@@ -45,6 +45,15 @@ function openBrowser(url: string) {
   }
 }
 
+function getIconBase64(): string {
+  try {
+    const iconPath = path.join(path.dirname(new URL(import.meta.url).pathname), '..', '..', '..', 'icon.png');
+    return fs.readFileSync(iconPath).toString('base64');
+  } catch {
+    return '';
+  }
+}
+
 function createLoginPage(authUrl: string, state: string): string {
   const tempDir = path.join(os.tmpdir(), 'ifs-mcp');
   if (!fs.existsSync(tempDir)) {
@@ -52,6 +61,10 @@ function createLoginPage(authUrl: string, state: string): string {
   }
 
   const htmlPath = path.join(tempDir, `login-${state}.html`);
+  const iconBase64 = getIconBase64();
+  const logoHtml = iconBase64
+    ? `<img src="data:image/png;base64,${iconBase64}" width="80" height="80" alt="MCP Server" style="border-radius:50%;display:block;margin:0 auto 24px;" />`
+    : `<div class="logo">🔐</div>`;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -97,6 +110,8 @@ function createLoginPage(authUrl: string, state: string): string {
       justify-content: center;
       font-size: 32px;
     }
+
+    /* fallback only — used when icon.png cannot be loaded */
 
     h1 {
       font-size: 28px;
@@ -191,7 +206,7 @@ function createLoginPage(authUrl: string, state: string): string {
 </head>
 <body>
   <div class="container">
-    <div class="logo">🔐</div>
+    ${logoHtml}
     <h1>Connect to your IFS Cloud instance</h1>
     <p class="subtitle">Sign in to access your protected resources through the MCP server</p>
 
