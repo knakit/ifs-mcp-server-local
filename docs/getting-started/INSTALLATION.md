@@ -2,18 +2,22 @@
 
 ## Prerequisites
 
-- [Claude Desktop](https://claude.ai/download)
+- [Claude Desktop](https://claude.ai/download), [Claude Code](https://claude.ai/claude-code), **or** [Codex CLI](https://developers.openai.com/codex/) — pick one, or use several against the same IFS instance
 - An IFS Cloud instance with a public OAuth 2.0 client (Client ID + Realm)
 
 ---
 
 ## Step 1 — Create an OAuth Client in IFS Cloud
 
-You need a public OAuth client in your IFS Cloud instance. If one has already been set up for this tool, skip to Step 2.
+You need an OAuth client in your IFS Cloud instance. Which kind depends on how you plan to authenticate — see [Managing IFS Environments](ENVIRONMENTS.md) if you're not sure which fits. If a client has already been set up for this tool, skip to Step 2.
 
 > If you don't have access to the IAM screen, ask your IFS administrator to create the client for you.
 
 In IFS Cloud, navigate to: **Access Control → Identity and Access Manager → IAM Clients**
+
+### Option A — Public client, for interactive login (`authorization_code`)
+
+The default mode. A person logs in through a browser, so no client secret is stored anywhere.
 
 1. Click **New** to open the Create New Client dialog
 2. Enter a **Client ID** (e.g. `ifs-mcp-server`) and optionally a description
@@ -27,6 +31,24 @@ In IFS Cloud, navigate to: **Access Control → Identity and Access Manager → 
 
 ![IFS IAM Client Setup](../images/ifs-iam-client-setup.png)
 
+### Option B — Confidential client, for headless auth (`client_credentials`)
+
+Only needed if you'll register an environment with `authMode: "client_credentials"` — no browser involved, so this is what makes headless/automated use (including Claude Cowork) possible. Skip this unless you specifically need it.
+
+1. Click **New** to open the Create New Client dialog
+2. Enter a **Client ID** (e.g. `ifs-mcp-server-service`) and a description
+3. Toggle **Enabled** ON
+4. Leave **Public Client** OFF and **Direct Access Grants** OFF
+5. Toggle **Service Accounts** ON — this is the key setting; it's what enables the `client_credentials` grant
+6. No **Redirect Uri** is needed — this client never sends a browser through a login page
+7. Under **Service Account User**, toggle both **Create IFS Service User** and **Activate IFS Service User** ON — IFS creates a dedicated user for this client to act as
+8. Click **OK** to save, then **copy the generated Client Secret immediately** — some IAM screens only display it once
+
+![IFS IAM Client Setup — Service Account](../images/ifs-iam-client-setup-service.png)
+
+> [!IMPORTANT]
+> A freshly created service user has **no IFS permissions by default**. Before this client can call anything, grant its service user the Permission Sets needed for the projections your skills use — the same way you'd authorize any other IFS user (**Users → Permission Sets**, or the equivalent screen in your IFS version). Without this step, authentication will succeed but every API call will fail with a permissions error.
+
 ---
 ## Step 2 - Create the skills directory
 Create a folder in your PC to save the skill files.
@@ -34,11 +56,13 @@ Create a folder in your PC to save the skill files.
 > [!TIP]
 > Community maintained skills can be found in the github repository [IFS Skills](https://github.com/knakit/ifs-mcp-skills). You can download them and use the skill folder. 
 
-## Step 3 — Install the Extension
+## Step 3 — Install the Server
+
+Same server every time — pick the option that matches your host.
+
+### Option A — Claude Desktop
 
 Download the latest `ifs-mcp-server.mcpb` from the [GitHub Releases](https://github.com/knakit/ifs-mcp-server-local/releases) page.
-
-**Install in Claude Desktop:**
 
 1. Open **Claude Desktop**
 2. Go to **Settings → Extensions → Advanced settings**
@@ -52,6 +76,34 @@ Download the latest `ifs-mcp-server.mcpb` from the [GitHub Releases](https://git
 ![Installing IFS MCP Server in Claude Desktop](../images/clade-desktop-install-ifs-mcpb.gif)
 
 > **Optional:** Set the **Skills Directory** to keep skills in a separate folder (e.g. a shared git repo). See [CONFIGURATION.md](CONFIGURATION.md) for details.
+
+### Option B — Claude Code
+
+There's no settings dialog for a Code plugin, so the IFS URL/realm/client ID from Step 1 are registered as a named **environment** through chat instead of a form.
+
+1. Clone this repo, then `npm install && npm run build`
+2. Add it as a plugin marketplace and install it:
+   ```
+   claude plugin marketplace add /path/to/ifs-mcp-server-local
+   claude plugin install ifs-mcp-server@ifs-local
+   ```
+3. In a `claude` session, ask Claude to register your instance — e.g. *"add an IFS environment called prod, url https://your-tenant.ifs.cloud, realm yourrealm, client id from Step 1"*. This calls `add_ifs_environment` and makes it the active environment automatically.
+4. See **[Managing IFS Environments](ENVIRONMENTS.md)** for adding more than one instance, `client_credentials` (headless) auth, and the read-only safety flag.
+
+### Option C — Codex CLI
+
+Codex has no plugin/marketplace layer — it's a direct MCP server registration, nothing else to install.
+
+1. Clone this repo, then `npm install && npm run build`
+2. Register the server:
+   ```
+   codex mcp add ifs -- node /absolute/path/to/ifs-mcp-server-local/build/index.js
+   ```
+   (or add the equivalent `[mcp_servers.ifs]` table to `~/.codex/config.toml` by hand)
+3. Run `codex`, then `/mcp` to confirm `ifs` is connected
+4. Register your IFS instance the same way as Claude Code — ask Codex to add an environment. See **[Managing IFS Environments](ENVIRONMENTS.md)**.
+
+> Codex has no prompt/slash-command surface for MCP-declared prompts, so the three skill-building prompts aren't available as a guided flow here — call `get_api_guide`, `parse_har_file`, or `read_openapi_file` directly and drive the skill-building conversation yourself. See [Skill Authoring](../guides/SKILL_AUTHORING.md).
 
 ---
 
@@ -105,6 +157,7 @@ Easy as that!
 
 ## Next Steps
 
+- [Managing IFS Environments](ENVIRONMENTS.md) — add more instances, or use `client_credentials` for headless auth
 - [Skill Authoring Guide](../guides/SKILL_AUTHORING.md) — learn how to build skills from HAR recordings and OpenAPI specs
 - [Configuration](CONFIGURATION.md) — set up a persistent skills directory
 - [Tools Reference](../reference/TOOLS.md) — full reference for all available tools and prompts

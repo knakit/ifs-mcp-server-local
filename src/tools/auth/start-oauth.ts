@@ -2,6 +2,8 @@ import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { OAuthManager } from "../../lib/auth/oauth-manager.js";
 import { getCurrentSessionId } from "../../lib/auth/session-manager.js";
 import { tokenStore } from "../../lib/auth/token-store.js";
+import { getActiveSessionKey, listEnvironments } from "../../lib/config.js";
+import { getOAuthParamsForKey } from "../../lib/types.js";
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -242,6 +244,54 @@ function createLoginPage(authUrl: string, state: string): string {
 
 export async function handler(args: any, oauthManager: OAuthManager) {
   const { force = false } = args || {};
+
+  // Need a selected environment (or legacy env-var config) to authenticate against.
+  if (!getActiveSessionKey()) {
+    const config = listEnvironments();
+    const names = Object.keys(config.environments);
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: JSON.stringify({
+            error: names.length === 0 ? "no_environment_configured" : "no_environment_selected",
+            message: names.length === 0
+              ? "No IFS environment is configured. Ask the user for their IFS Cloud URL, OAuth realm, and client ID, then call add_ifs_environment."
+              : "No IFS environment is selected. Ask the user which one to use, then call use_ifs_environment.",
+            environments: names,
+          }, null, 2),
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  // Client-credentials environments authenticate machine-to-machine — no browser.
+  const activeKey = getActiveSessionKey()!;
+  if (getOAuthParamsForKey(activeKey).authMode === "client_credentials") {
+    try {
+      await oauthManager.clientCredentialsToken(activeKey);
+    } catch (err: any) {
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify({
+          status: "client_credentials_failed",
+          environment: activeKey,
+          message: err?.response?.data || err?.message || String(err),
+        }, null, 2) }],
+        isError: true,
+      };
+    }
+    const data = tokenStore.get(activeKey);
+    return {
+      content: [{ type: "text" as const, text: JSON.stringify({
+        status: "authenticated",
+        environment: activeKey,
+        authMode: "client_credentials",
+        expiresInMinutes: data ? Math.floor((data.expiresAt - Date.now()) / 60000) : 0,
+        message: "Authenticated via client credentials (service account). No browser login required.",
+      }, null, 2) }],
+    };
+  }
 
   // Check for existing active session
   if (!force) {

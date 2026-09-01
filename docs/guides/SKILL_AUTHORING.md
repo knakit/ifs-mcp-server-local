@@ -13,7 +13,7 @@ This guide walks you through creating a skill from scratch — no technical know
 - Access to your IFS Cloud instance in a browser
 - **Google Chrome** or **Microsoft Edge** (recommended — both have the same developer tools)
 - Firefox also works, but the steps differ slightly
-- Claude Desktop with the IFS MCP server connected
+- Claude Desktop, Claude Code, or Codex CLI with the IFS MCP server connected
 
 ---
 
@@ -190,13 +190,11 @@ That's your recording — a `.har` file containing everything IFS did in the bac
 
 Now hand the HAR file to Claude.
 
-1. Open **Claude Desktop**
+1. **In Claude Desktop:** click the **+** icon (or the attachment/prompt button) in the chat input area, then select **build_ifs_skill_from_har** from the list of prompts.
+   **In Claude Code:** run the `/build-skill-from-har` slash command.
+   **In Codex CLI:** there's no prompt shortcut — just ask directly, e.g. *"call parse_har_file on this HAR file, then help me build a skill from it: C:\path\to\recording.har"*.
 
-2. Click the **+** icon (or the attachment/prompt button) in the chat input area
-
-3. Select **build_ifs_skill_from_har** from the list of prompts
-
-4. When asked, enter the **full file path** to your HAR file, for example:
+2. When asked, enter the **full file path** to your HAR file, for example:
    - Windows: `C:\Users\YourName\Downloads\customer-orders.har`
    - Mac/Linux: `/Users/yourname/Downloads/customer-orders.har`
 
@@ -290,8 +288,9 @@ Use this approach for master data projections (customers, suppliers, parts) wher
 
 You just need to know the projection service name. Claude fetches the spec using your active IFS session.
 
-1. Open **Claude Desktop** (make sure you are authenticated to IFS — run `get_session_info` to check)
-2. Click the **+** icon and select **build_ifs_skill_from_projection** from the prompt list
+1. Make sure you're authenticated to IFS — run `get_session_info` to check
+2. **In Claude Desktop:** click the **+** icon and select **build_ifs_skill_from_projection** from the prompt list.
+   **In Claude Code:** run the `/build-skill-from-projection` slash command.
 3. In the **`projection_name`** field, enter the service name — for example:
    - `CustomerHandling`
    - `SupplierHandling`
@@ -312,7 +311,7 @@ If you prefer to inspect the spec first or work offline:
    https://your-instance.ifs.cloud/main/ifsapplications/projection/v1/CustomerHandling.svc/$openapi?V2
    ```
 3. Save the page as a `.json` file (in Chrome: **Ctrl+S**, save as *Webpage, Single File* or use the browser's save option for plain text)
-4. In Claude Desktop, select **build_ifs_skill_from_openapi** and provide the file path in the **`openapi_file_path`** field
+4. **In Claude Desktop:** select **build_ifs_skill_from_openapi** from the prompt list. **In Claude Code:** run `/build-skill-from-openapi`. Either way, provide the file path in the **`openapi_file_path`** field
 5. Claude parses the file and proceeds as in Option A
 
 ### What the OpenAPI workflow covers
@@ -364,11 +363,10 @@ To contribute a skill to the community repository, open a pull request at [githu
 
 ### Skills work across dev and prod
 
-If you're running both a dev and a production environment (see [Configuration](../getting-started/CONFIGURATION.md)), point both server registrations to the same `SKILLS_DIR`. Skills you create or import are instantly available in both environments — you only need to build and maintain one set of skills.
+Skills aren't tied to any one IFS instance — the same `.md` file works against every environment you've registered (see [Managing IFS Environments](../getting-started/ENVIRONMENTS.md)), since `get_api_guide` reads from one shared skills folder regardless of which environment is active. Build and maintain one set of skills, then just switch environments as needed:
 
-When using a skill against a specific environment, just tell Claude which server to use:
-- *"Using ifs-dev, check if customer order 100012 is released"*
-- *"Using ifs-prod, export all open purchase orders to CSV"*
+- *"Switch to dev, then check if customer order 100012 is released"* — calls `use_ifs_environment` first
+- *"Using prod as a one-off, export all open purchase orders to CSV"* — pass `environment: "prod"` directly to `export_api_data` without changing the active environment
 
 ---
 

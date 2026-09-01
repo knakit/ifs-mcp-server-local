@@ -1,10 +1,11 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { getCurrentSessionId } from "../../lib/auth/session-manager.js";
 import { tokenStore } from "../../lib/auth/token-store.js";
+import { getActiveEnvName } from "../../lib/config.js";
 
 export const definition: Tool = {
   name: "get_session_info",
-  description: "Get information about the current saved session, including session ID and expiration status.",
+  description: "Get information about the current saved session for the active IFS environment, including which environment is active and expiration status.",
   annotations: {
     readOnlyHint: true,
     destructiveHint: false,
@@ -17,6 +18,7 @@ export const definition: Tool = {
 };
 
 export async function handler(args: unknown, oauthManager?: any) {
+  const activeEnv = getActiveEnvName();
   const sessionId = getCurrentSessionId();
 
   if (!sessionId) {
@@ -26,7 +28,10 @@ export async function handler(args: unknown, oauthManager?: any) {
           type: "text" as const,
           text: JSON.stringify({
             authenticated: false,
-            message: "No active session found. Please use start_oauth to authenticate.",
+            activeEnvironment: activeEnv,
+            message: activeEnv
+              ? "No active session found for the selected environment. Please use start_oauth to authenticate."
+              : "No IFS environment selected. Use list_ifs_environments and use_ifs_environment first.",
           }, null, 2),
         },
       ],
@@ -60,6 +65,7 @@ export async function handler(args: unknown, oauthManager?: any) {
         type: "text" as const,
         text: JSON.stringify({
           authenticated: true,
+          activeEnvironment: activeEnv,
           sessionId: sessionId,
           expiresIn: isExpired ? 0 : expiresIn,
           expiresInMinutes: isExpired ? 0 : Math.floor(expiresIn / 60),

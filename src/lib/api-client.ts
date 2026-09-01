@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig } from "axios";
 import { OAuthManager } from "./auth/oauth-manager.js";
 import { getCurrentSessionId } from "./auth/session-manager.js";
-import { getApiBaseUrl } from "./types.js";
+import { getApiBaseUrlForKey } from "./types.js";
 
 export interface ApiCallOptions {
   endpoint: string;
@@ -46,7 +46,9 @@ export async function callProtectedApi(
 
     const config: AxiosRequestConfig = {
       method,
-      url: `${getApiBaseUrl()}${endpoint}`,
+      // Base URL comes from the same environment as the token (sessionId == env
+      // key), so an explicit per-call environment override stays consistent.
+      url: `${getApiBaseUrlForKey(sessionId)}${endpoint}`,
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Accept": "application/json",

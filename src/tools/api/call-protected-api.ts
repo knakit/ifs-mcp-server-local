@@ -1,6 +1,7 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { OAuthManager } from "../../lib/auth/oauth-manager.js";
 import { callProtectedApi } from "../../lib/api-client.js";
+import { loadConfig, getEnvironment } from "../../lib/config.js";
 
 export const definition: Tool = {
   name: "call_protected_api",
@@ -20,10 +21,15 @@ export const definition: Tool = {
     "then export a HAR file from DevTools (Network tab → right-click → Save all as HAR with content) " +
     "and use the build_ifs_skill_guide prompt to create a skill for it.' " +
     "If the response contains error 'authentication_required', immediately call start_oauth — do not relay the error to the user or ask them to authenticate manually. " +
-    "If no sessionId is provided, uses the most recent saved session.",
+    "Targets the active IFS environment unless 'environment' is given. " +
+    "If the response contains error 'no_environment_selected', do not guess — show the user the listed environments and ask which one to use, then call use_ifs_environment.",
   inputSchema: {
     type: "object",
     properties: {
+      environment: {
+        type: "string",
+        description: "Optional: name of the IFS environment to target for this one call, overriding the active selection. Omit to use the active environment.",
+      },
       sessionId: {
         type: "string",
         description: "Session ID from OAuth authentication (optional - uses saved session if not provided)",
@@ -73,11 +79,62 @@ function buildLargeResponseSummary(data: any, endpoint: string) {
   };
 }
 
+function guardError(payload: Record<string, unknown>) {
+  return {
+    content: [{ type: "text" as const, text: JSON.stringify(payload, null, 2) }],
+    isError: true,
+  };
+}
+
 export async function handler(args: any, oauthManager: OAuthManager) {
-  const { sessionId, endpoint, method, body } = args;
+  const { sessionId, endpoint, method, body, environment } = args;
+
+  const config = loadConfig();
+  const envNames = Object.keys(config.environments);
+
+  // No environments configured at all.
+  if (envNames.length === 0 && !process.env.API_BASE_URL) {
+    return guardError({
+      error: "no_environment_configured",
+      message: "No IFS environment is configured. Ask the user for their IFS Cloud URL, OAuth realm, and client ID, then call add_ifs_environment.",
+    });
+  }
+
+  // Resolve which environment this call targets.
+  const targetEnvName = environment ?? config.activeEnv;
+
+  // Prod-safety: when more than one environment exists and none is selected,
+  // refuse rather than silently defaulting (avoids accidental production hits).
+  if (!targetEnvName && envNames.length > 1) {
+    return guardError({
+      error: "no_environment_selected",
+      message: "Multiple IFS environments exist but none is selected. Ask the user which one to use, then call use_ifs_environment.",
+      environments: envNames,
+    });
+  }
+
+  if (environment && !config.environments[environment]) {
+    return guardError({
+      error: "unknown_environment",
+      message: `Environment '${environment}' is not configured.`,
+      environments: envNames,
+    });
+  }
+
+  // Read-only environments block mutating methods.
+  const targetEnv = targetEnvName ? getEnvironment(targetEnvName) : null;
+  if (targetEnv?.readOnly && method !== "GET") {
+    return guardError({
+      error: "read_only_environment",
+      message: `Environment '${targetEnvName}' is marked read-only; ${method} is blocked. Only GET requests are allowed.`,
+    });
+  }
+
+  // Per-call override is threaded through as the session key (== env name).
+  const effectiveSessionId = sessionId ?? environment;
 
   const result = await callProtectedApi(
-    { endpoint, method, sessionId, body },
+    { endpoint, method, sessionId: effectiveSessionId, body },
     oauthManager
   );
 

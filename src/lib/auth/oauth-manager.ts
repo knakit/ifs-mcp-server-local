@@ -1,8 +1,9 @@
 import crypto from "crypto";
 import axios from "axios";
-import { OAUTH_CONFIG, TokenData } from "../types.js";
+import { OAUTH_CONFIG, TokenData, getOAuthParamsForKey } from "../types.js";
 import { tokenStore } from "./token-store.js";
 import { saveSession } from "./session-manager.js";
+import { getActiveSessionKey } from "../config.js";
 
 // PKCE helper functions
 function generateCodeVerifier(): string {
@@ -23,15 +24,26 @@ export class OAuthManager {
   private pendingAuths = new Map<string, {
     codeVerifier: string;
     state: string;
+    sessionKey: string;
   }>();
 
   // Start OAuth flow
   startAuthFlow(): { authUrl: string; state: string } {
+    // Bind this flow to the environment that is active right now. If the user
+    // switches environments before the browser redirect completes, the token is
+    // still stored under the environment they authenticated against.
+    const sessionKey = getActiveSessionKey();
+    if (!sessionKey) {
+      throw new Error(
+        "No IFS environment selected. Add one with add_ifs_environment, then choose it with use_ifs_environment."
+      );
+    }
+
     const state = crypto.randomBytes(16).toString("hex");
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = generateCodeChallenge(codeVerifier);
 
-    this.pendingAuths.set(state, { codeVerifier, state });
+    this.pendingAuths.set(state, { codeVerifier, state, sessionKey });
     // Auto-expire incomplete auth flows
     setTimeout(() => this.pendingAuths.delete(state), PENDING_AUTH_TTL_MS);
 
@@ -59,13 +71,17 @@ export class OAuthManager {
 
     this.pendingAuths.delete(state);
 
+    // Resolve token endpoint + client id from the environment this flow was
+    // bound to (not the currently-active one).
+    const { clientId, tokenUrl } = getOAuthParamsForKey(pending.sessionKey);
+
     const response = await axios.post(
-      OAUTH_CONFIG.tokenUrl,
+      tokenUrl,
       {
         grant_type: "authorization_code",
         code: code,
         redirect_uri: OAUTH_CONFIG.redirectUri,
-        client_id: OAUTH_CONFIG.clientId,
+        client_id: clientId,
         code_verifier: pending.codeVerifier,
       },
       {
@@ -77,20 +93,18 @@ export class OAuthManager {
 
     const { access_token, refresh_token, expires_in } = response.data;
 
-    // Generate session ID
-    const sessionId = crypto.randomBytes(16).toString("hex");
-
-    // Store tokens
+    // Token is keyed by environment so each environment stays independently
+    // authenticated.
     const sessionData: TokenData = {
       accessToken: access_token,
       refreshToken: refresh_token,
       expiresAt: Date.now() + expires_in * 1000,
-      userId: sessionId, // In production, extract from token or user info endpoint
+      userId: pending.sessionKey,
     };
 
-    tokenStore.set(sessionId, sessionData);
+    tokenStore.set(pending.sessionKey, sessionData);
 
-    return sessionId;
+    return pending.sessionKey;
   }
 
   // Refresh access token
@@ -100,12 +114,13 @@ export class OAuthManager {
       throw new Error("No refresh token available");
     }
 
+    const { clientId, tokenUrl } = getOAuthParamsForKey(sessionId);
     const response = await axios.post(
-      OAUTH_CONFIG.tokenUrl,
+      tokenUrl,
       {
         grant_type: "refresh_token",
         refresh_token: session.refreshToken,
-        client_id: OAUTH_CONFIG.clientId,
+        client_id: clientId,
       },
       {
         headers: {
@@ -128,16 +143,62 @@ export class OAuthManager {
     saveSession(sessionId, updated);
   }
 
-  // Get valid access token (refresh if needed)
+  // Acquire (or renew) a token via the client credentials grant. Machine-to-
+  // machine: no browser, no callback. Used by environments with
+  // authMode === "client_credentials". Client-credentials responses carry no
+  // refresh token, so renewal just re-requests.
+  async clientCredentialsToken(sessionKey: string): Promise<void> {
+    const { clientId, clientSecret, tokenUrl } = getOAuthParamsForKey(sessionKey);
+    if (!clientSecret) {
+      throw new Error(
+        `Environment '${sessionKey}' uses client_credentials but has no client secret. Re-add it with add_ifs_environment including clientSecret.`
+      );
+    }
+
+    const response = await axios.post(
+      tokenUrl,
+      {
+        grant_type: "client_credentials",
+        client_id: clientId,
+        client_secret: clientSecret,
+      },
+      {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      }
+    );
+
+    const { access_token, expires_in } = response.data;
+    const data: TokenData = {
+      accessToken: access_token,
+      expiresAt: Date.now() + expires_in * 1000,
+      userId: sessionKey,
+    };
+
+    tokenStore.set(sessionKey, data);
+    saveSession(sessionKey, data);
+  }
+
+  // Get valid access token (refresh / re-acquire if needed)
   async getAccessToken(sessionId: string): Promise<string> {
-    const session = tokenStore.get(sessionId);
+    const { authMode } = getOAuthParamsForKey(sessionId);
+    let session = tokenStore.get(sessionId);
+
     if (!session) {
+      // client_credentials can authenticate on demand — no prior login needed.
+      if (authMode === "client_credentials") {
+        await this.clientCredentialsToken(sessionId);
+        return tokenStore.get(sessionId)!.accessToken;
+      }
       throw new Error("No session found. Please authenticate first.");
     }
 
-    // Check if token is expired or about to expire (5 min buffer)
+    // Renew if expired or about to expire (5 min buffer).
     if (session.expiresAt < Date.now() + 300000) {
-      await this.refreshAccessToken(sessionId);
+      if (authMode === "client_credentials") {
+        await this.clientCredentialsToken(sessionId);
+      } else {
+        await this.refreshAccessToken(sessionId);
+      }
       return tokenStore.get(sessionId)!.accessToken;
     }
 

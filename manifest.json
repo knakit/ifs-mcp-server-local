@@ -61,12 +61,28 @@
   },
   "tools": [
     {
+      "name": "add_ifs_environment",
+      "description": "Register (or update) a named IFS Cloud environment with its URL, OAuth realm, and client ID. The first environment added becomes active automatically. Also usable in Claude Desktop to manage multiple IFS instances beyond the one configured in settings above."
+    },
+    {
+      "name": "list_ifs_environments",
+      "description": "List all configured IFS Cloud environments, showing which one is active and whether each is currently authenticated."
+    },
+    {
+      "name": "use_ifs_environment",
+      "description": "Select which IFS Cloud environment subsequent calls target."
+    },
+    {
+      "name": "remove_ifs_environment",
+      "description": "Delete a configured IFS Cloud environment and its saved authentication token."
+    },
+    {
       "name": "start_oauth",
       "description": "Start OAuth 2.0 authentication flow — opens a login window in the browser. Call this automatically whenever an API tool returns an authentication_required error or session expiry. Do not ask the user to trigger this manually."
     },
     {
       "name": "get_session_info",
-      "description": "Get information about the current saved session, including session ID and expiration status."
+      "description": "Get information about the current saved session for the active IFS environment, including which environment is active and expiration status."
     },
     {
       "name": "call_protected_api",

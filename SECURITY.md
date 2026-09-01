@@ -23,9 +23,11 @@ This tool is designed to keep your data local. Understanding what stays on your 
 
 | Data | Where it's stored |
 |------|-------------------|
-| OAuth tokens (access + refresh) | `~/.ifs-mcp/session.json` |
-| OAuth Client ID | `.env` file in the server directory |
-| Skill files (API guides) | `build/resources/*.md` in the server directory |
+| OAuth tokens (access + refresh) | `~/.ifs-mcp/session.json`, keyed per environment |
+| IFS environment registry (URL, realm, client ID per named environment) | `~/.ifs-mcp/config.json` |
+| **Client secret** (only for environments using `client_credentials` auth mode) | `~/.ifs-mcp/config.json`, in plaintext, file permissions `0600` |
+| OAuth Client ID (legacy single-environment / `.mcpb` setup) | `.env` file or the Claude Desktop extension's own settings, not this repo |
+| Skill files (API guides) | `build/resources/*.md` in the server directory, or your configured skills directory |
 | Session state | In-memory only, restored from disk on startup |
 
 None of this data is transmitted to the developers of this tool, to Anthropic, or to any third party.
@@ -67,8 +69,16 @@ This tool is intended for use by technical users who understand the implications
 ### Protect your credentials
 
 - **Never commit `.env` to version control.** The `.gitignore` in this repository excludes it, but verify this before pushing.
-- This tool uses a **public OAuth client** with PKCE. The OAuth client itself holds no special grants — access is determined entirely by the IFS user account that authenticates. Ensure the user account you log in with has only the IFS roles and permissions needed for your intended workflows.
+- **Prefer `authorization_code` (the default) over `client_credentials`** when a person is present to log in interactively. `authorization_code` uses a **public OAuth client** with PKCE — no long-lived secret is ever stored, and access is scoped to whichever IFS user account authenticates. `client_credentials` exists specifically for headless use (no browser available, e.g. automation or Claude Cowork) and requires a confidential client secret that is written to disk — only use it when interactivity genuinely isn't possible.
 - If you need to revoke access, delete the session file (`rm ~/.ifs-mcp/session.json`) and remove or disable the OAuth client in **IFS Cloud IAM** if necessary.
+
+### If you use `client_credentials` environments
+
+Adding an environment with `authMode: "client_credentials"` (via the `add_ifs_environment` tool) writes its client secret to `~/.ifs-mcp/config.json` in **plaintext**. The file is created with `0600` permissions (owner read/write only), but unlike `session.json`'s access tokens — which expire and can be invalidated by re-authenticating — a leaked client secret is a standing credential until you rotate it in IFS Cloud IAM. Treat this file with the same care as `.env`:
+
+- Use a **confidential client scoped to a dedicated service/integration account**, not a shared or administrative one.
+- Mark the environment `readOnly: true` when it's used for reporting/read-only automation — `call_protected_api` will then block all non-GET methods against it, regardless of what the confidential client itself is permitted to do.
+- If the machine running the MCP server is shared or you suspect compromise, rotate the client secret in IFS Cloud IAM and update the environment with `add_ifs_environment` (which overwrites the stored secret) or remove it with `remove_ifs_environment`.
 
 ### Protect your session file
 

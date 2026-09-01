@@ -7,8 +7,16 @@ import * as importSkill from "./api/import-skill.js";
 import * as saveSkill from "./api/save-skill.js";
 import * as parseHarFile from "./api/parse-har-file.js";
 import * as readOpenapiFile from "./api/read-openapi-file.js";
+import * as addIfsEnvironment from "./env/add-ifs-environment.js";
+import * as listIfsEnvironments from "./env/list-ifs-environments.js";
+import * as useIfsEnvironment from "./env/use-ifs-environment.js";
+import * as removeIfsEnvironment from "./env/remove-ifs-environment.js";
 
 export const tools = [
+  addIfsEnvironment,
+  listIfsEnvironments,
+  useIfsEnvironment,
+  removeIfsEnvironment,
   startOAuth,
   getSessionInfo,
   callProtectedApi,

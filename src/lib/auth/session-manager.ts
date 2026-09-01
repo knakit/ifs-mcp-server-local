@@ -3,6 +3,7 @@ import path from "path";
 import os from "os";
 import { TokenData } from "../types.js";
 import { tokenStore } from "./token-store.js";
+import { getActiveSessionKey } from "../config.js";
 
 // Session storage path
 const SESSION_DIR = path.join(os.homedir(), '.ifs-mcp');
@@ -41,14 +42,25 @@ export function saveSession(sessionId: string, sessionData: TokenData) {
   }
 }
 
-// Get the current/latest session ID
-export function getCurrentSessionId(): string | null {
-  const sessions = loadSessions();
-  if (sessions.size === 0) return null;
+// Remove a stored session (e.g. when an environment is deleted).
+export function removeSession(sessionId: string) {
+  try {
+    const sessions = loadSessions();
+    if (sessions.delete(sessionId)) {
+      fs.writeFileSync(SESSION_FILE, JSON.stringify(Object.fromEntries(sessions), null, 2));
+      try { fs.chmodSync(SESSION_FILE, 0o600); } catch { /* non-fatal */ }
+    }
+  } catch {
+    // Silent fail
+  }
+  tokenStore.delete(sessionId);
+}
 
-  // Return the most recent session (last added)
-  const sessionIds = Array.from(sessions.keys());
-  return sessionIds[sessionIds.length - 1];
+// Current session key = the active IFS environment (or "default" in legacy
+// env-var mode). Tokens are stored per environment, so switching environments
+// never logs you out of the others.
+export function getCurrentSessionId(): string | null {
+  return getActiveSessionKey();
 }
 
 // Initialize token store from saved sessions

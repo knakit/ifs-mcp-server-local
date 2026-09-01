@@ -2,6 +2,47 @@
 
 ## Tools
 
+### Environment management
+
+See [Managing IFS Environments](../getting-started/ENVIRONMENTS.md) for the full guide — summary reference below.
+
+#### add_ifs_environment
+Register (or update) a named IFS Cloud environment. The first one added becomes active automatically.
+
+```
+add_ifs_environment({ name: "prod", apiBaseUrl: "https://your-tenant.ifs.cloud", oauthRealm: "yourrealm", oauthClientId: "..." })
+add_ifs_environment({ name: "automation", apiBaseUrl: "...", oauthRealm: "...", oauthClientId: "...", authMode: "client_credentials", clientSecret: "...", readOnly: true })
+```
+
+**Inputs:** `name`, `apiBaseUrl`, `oauthRealm`, `oauthClientId` (all required); `authMode` (`authorization_code` default, or `client_credentials`); `clientSecret` (required with `client_credentials`); `readOnly` (optional)
+
+#### list_ifs_environments
+List all registered environments, which is active, and whether each is currently authenticated.
+
+```
+list_ifs_environments()
+```
+
+#### use_ifs_environment
+Switch which environment subsequent calls target.
+
+```
+use_ifs_environment({ name: "test" })
+```
+
+**Inputs:** `name` (required — must already be registered)
+
+#### remove_ifs_environment
+Delete an environment and its saved session/token together.
+
+```
+remove_ifs_environment({ name: "test" })
+```
+
+**Inputs:** `name` (required)
+
+### Authentication and API tools
+
 ### 1. start_oauth
 Initiate OAuth 2.0 login flow. Opens a browser window for IFS Cloud authentication.
 
@@ -18,14 +59,15 @@ get_session_info()
 ```
 
 ### 3. call_protected_api
-Make authenticated API calls to any IFS Cloud endpoint. This is the core tool — use it with the resource guides below.
+Make authenticated API calls to any IFS Cloud endpoint. This is the core tool — use it with the resource guides below. Targets the active environment unless `environment` overrides it for this one call. If an environment is marked `readOnly`, non-`GET` methods are blocked.
 
 ```
 call_protected_api({ endpoint: "/main/ifsapplications/...", method: "GET" })
 call_protected_api({ endpoint: "/main/ifsapplications/...", method: "POST", body: {...} })
+call_protected_api({ environment: "test", endpoint: "/main/ifsapplications/...", method: "GET" })
 ```
 
-**Inputs:** `endpoint` (required), `method` (required), `body`, `sessionId`
+**Inputs:** `endpoint` (required), `method` (required), `body`, `sessionId`, `environment` (optional — one-off override of the active environment)
 **Methods:** GET, POST, PUT, DELETE, PATCH
 
 ### 4. get_api_guide
@@ -45,9 +87,10 @@ Export large API result sets to a CSV file. Fetches data in batches of 100 recor
 ```
 export_api_data({ endpoint: "/main/ifsapplications/...", method: "GET" })
 export_api_data({ endpoint: "/main/ifsapplications/...", method: "GET", filename: "sales-reports" })
+export_api_data({ environment: "test", endpoint: "/main/ifsapplications/...", method: "GET" })
 ```
 
-**Inputs:** `endpoint` (required), `method` (required), `filename` (optional), `sessionId`, `body`
+**Inputs:** `endpoint` (required), `method` (required), `filename` (optional), `sessionId`, `body`, `environment` (optional)
 
 ### 6. import_skill
 Import a skill guide from a URL or local file path. Supports GitHub raw URLs, Gist URLs, or any direct `.md` link. Saves to `SKILLS_DIR` if set, otherwise `build/resources/`. The skill is available immediately — no restart needed.
@@ -60,25 +103,7 @@ import_skill({ source: "https://...", filename: "ifs-purchase-orders.md" })
 
 **Inputs:** `source` (required — URL or file path), `filename` (optional — defaults to last segment of source)
 
-### 7. parse_har_file
-Parse a browser HAR file and return a structured summary of IFS API operations found. Used internally by `build_ifs_skill_from_har` but can also be called directly to inspect a recording.
-
-```
-parse_har_file({ path: "C:\\Users\\YourName\\Downloads\\recording.har" })
-```
-
-**Inputs:** `path` (required — absolute path to `.har` file)
-
-### 8. read_openapi_file
-Parse a downloaded OpenAPI/Swagger JSON spec and return a structured summary of entity sets, operations, and fields. Used internally by `build_ifs_skill_from_openapi` but can also be called directly to inspect a spec.
-
-```
-read_openapi_file({ path: "C:\\Users\\YourName\\Downloads\\CustomerHandling.json" })
-```
-
-**Inputs:** `path` (required — absolute path to OpenAPI/Swagger JSON file)
-
-### 9. save_skill
+### 7. save_skill
 Save or update a skill guide file in the skills library. Writes to `SKILLS_DIR` if set, otherwise `build/resources/`. Used internally by the skill-building prompts but can also be called directly. For updates, returns a structured diff showing what changed (sections, fields, examples added or removed). The skill is available immediately — no restart needed.
 
 ```
@@ -87,9 +112,27 @@ save_skill({ filename: "ifs-purchase-orders.md", content: "# Purchase Orders\n..
 
 **Inputs:** `filename` (required — must end in `.md`), `content` (required — full markdown content)
 
+### 8. parse_har_file
+Parse a browser HAR file and return a structured summary of IFS API operations found. Used internally by `build_ifs_skill_from_har` but can also be called directly to inspect a recording.
+
+```
+parse_har_file({ path: "C:\\Users\\YourName\\Downloads\\recording.har" })
+```
+
+**Inputs:** `path` (required — absolute path to `.har` file)
+
+### 9. read_openapi_file
+Parse a downloaded OpenAPI/Swagger JSON spec and return a structured summary of entity sets, operations, and fields. Used internally by `build_ifs_skill_from_openapi` but can also be called directly to inspect a spec.
+
+```
+read_openapi_file({ path: "C:\\Users\\YourName\\Downloads\\CustomerHandling.json" })
+```
+
+**Inputs:** `path` (required — absolute path to OpenAPI/Swagger JSON file)
+
 ## Prompts
 
-Prompts are guided workflows available in Claude Desktop's `+` menu. They set up a structured conversation with instructions and context already loaded.
+Prompts are guided workflows that set up a structured conversation with instructions and context already loaded. In Claude Desktop they're available from the `+` menu; in Claude Code the same three are also exposed as slash commands (`/build-skill-from-projection`, `/build-skill-from-har`, `/build-skill-from-openapi`). Codex CLI has no prompt surface for MCP-declared prompts — call `get_api_guide`, `parse_har_file`, or `read_openapi_file` directly instead and drive the same Capture → Refine → Make → Use flow manually.
 
 ### build_ifs_skill_from_projection
 Build a new IFS skill by fetching the OpenAPI spec live from IFS. Best for master data projections (customers, suppliers, parts). Requires an active authenticated session.
@@ -141,6 +184,8 @@ Resources are API guides that Claude reads to learn how to construct `call_prote
 | Resource | URI | Description |
 |----------|-----|-------------|
 | IFS OData Reference | `ifs://ifs-common-odata-reference/guide` | OData query syntax reference for IFS Cloud projections |
+| IFS Customer Management | `ifs://ifs-sales-customers/guide` | Example skill: create/query customers |
+| IFS Skill Authoring Guide | `ifs://ifs-skill-authoring/guide` | Format reference used internally by the skill-building prompts (also loaded via `get_api_guide("ifs-skill-authoring")`) |
 
 ### Adding New Resources
 
@@ -150,7 +195,7 @@ The recommended way is via one of the skill-building prompts above. To add one m
    - Start with `# Heading` (becomes the resource name)
    - First paragraph becomes the description
    - Filename becomes the URI slug → `ifs://purchase-orders/guide`
-2. If adding directly to `src/resources/` instead, rebuild first: `npx tsc`
+2. If adding directly to `src/resources/` instead, rebuild with `npm run build` (bare `tsc` skips the step that copies `.md` files into `build/resources/`)
 
 The skill is available immediately on the next request — no restart needed. To remove a skill: delete the `.md` file. It disappears from the next request onwards.
 
@@ -165,7 +210,8 @@ import_skill({ source: "https://raw.githubusercontent.com/knakit/ifs-mcp-skills/
 
 ## Authentication
 
-- Authenticate once via `start_oauth`
-- Sessions are saved to `~/.ifs-mcp/session.json` and persist across restarts
-- Tokens are auto-refreshed when nearing expiry (5-minute buffer)
-- Optional `sessionId` parameter available for multi-session scenarios
+- Register at least one environment first (see [Managing IFS Environments](../getting-started/ENVIRONMENTS.md)), or set the legacy `API_BASE_URL`/`OAUTH_REALM`/`OAUTH_CLIENT_ID` env vars
+- Authenticate via `start_oauth` — opens a browser for `authorization_code` environments; for `client_credentials` environments it fetches a token silently, no browser involved
+- Sessions are saved to `~/.ifs-mcp/session.json`, keyed per environment, and persist across restarts
+- Tokens are auto-refreshed (or, for `client_credentials`, re-fetched) when nearing expiry (5-minute buffer)
+- Optional `sessionId`/`environment` parameters available to target a non-active environment for a single call

@@ -30,6 +30,10 @@ export const definition: Tool = {
         type: "string",
         description: "Output filename without extension (e.g., 'quick-reports'). Defaults to 'export'.",
       },
+      environment: {
+        type: "string",
+        description: "Optional: name of the IFS environment to export from, overriding the active selection.",
+      },
       sessionId: {
         type: "string",
         description: "Session ID (optional - uses saved session if not provided)",
@@ -81,7 +85,8 @@ function appendEndpointParam(endpoint: string, param: string): string {
 }
 
 export async function handler(args: any, oauthManager: OAuthManager) {
-  const { endpoint, method, filename = "export", sessionId, body } = args;
+  const { endpoint, method, filename = "export", sessionId, body, environment } = args;
+  const effectiveSessionId = sessionId ?? environment;
 
   const downloadsDir = path.join(os.homedir(), "Downloads");
   const exportDir = fs.existsSync(downloadsDir) ? downloadsDir : path.join(os.homedir(), ".ifs-mcp", "exports");
@@ -100,7 +105,7 @@ export async function handler(args: any, oauthManager: OAuthManager) {
       let batchEndpoint = appendEndpointParam(baseEndpoint, `$top=${BATCH_SIZE}&$skip=${skip}`);
 
       const result = await callProtectedApi(
-        { endpoint: batchEndpoint, method, sessionId, body },
+        { endpoint: batchEndpoint, method, sessionId: effectiveSessionId, body },
         oauthManager
       );
 
@@ -148,7 +153,7 @@ export async function handler(args: any, oauthManager: OAuthManager) {
     }
 
     const csv = buildCsv(allRecords);
-    const BOM = "\uFEFF";
+    const BOM = "﻿";
     fs.writeFileSync(outputPath, BOM + csv, "utf-8");
 
     return {

@@ -9,6 +9,8 @@
 
 Connect Claude to your IFS Cloud instance and interact with your ERP through natural conversation.
 
+**Not exclusive to Claude Desktop** — the core is a standard MCP server, so it works the same way in **Claude Code** and other MCP-compatible tools (e.g. **Codex CLI**) too. See the [installation guide](docs/getting-started/INSTALLATION.md) for setup steps per host.
+
 ---
 
 ## The Idea
@@ -56,11 +58,23 @@ Share your skills in [IFS MCP Skills](https://github.com/knakit/ifs-mcp-skills) 
 
 ## Quick Start
 
-* Download the latest `ifs-mcp-server.mcpb` from [GitHub Releases](https://github.com/knakit/ifs-mcp-server-local/releases) and add it as an extension in Claude desktop.
-* Build your first skill.
-* Now it's ready to use to perform your IFS tasks in Claude desktop!
+Works the same way whether you use **Claude Desktop**, **Claude Code**, or **Codex CLI** — same server, same tools, same skills. Pick your host:
 
-> **[See the installation guide →](docs/getting-started/INSTALLATION.md)** for complete instructions on IFS OAuth client setup, configuration, first authentication, and building your first skill.
+**Claude Desktop**
+* Download the latest `ifs-mcp-server.mcpb` from [GitHub Releases](https://github.com/knakit/ifs-mcp-server-local/releases) and add it as an extension.
+* Build your first skill.
+
+**Claude Code**
+* Add this repo as a plugin marketplace: `claude plugin marketplace add <path-or-repo-url>`, then `claude plugin install ifs-mcp-server@ifs-local`.
+* Register your IFS instance by asking Claude to add an environment (no settings dialog — see [Managing IFS Environments](docs/getting-started/ENVIRONMENTS.md)).
+* Build your first skill.
+
+**Codex CLI**
+* Clone this repo, `npm install && npm run build`, then `codex mcp add ifs -- node /absolute/path/to/build/index.js`.
+* Register your IFS instance the same way as Claude Code — ask Codex to add an environment.
+* Build your first skill.
+
+> **[See the installation guide →](docs/getting-started/INSTALLATION.md)** for complete instructions on IFS OAuth client setup, installing for any of the three hosts, first authentication, and building your first skill.
 
 ---
 
@@ -69,8 +83,9 @@ Share your skills in [IFS MCP Skills](https://github.com/knakit/ifs-mcp-skills) 
 ### Getting Started
 | Document | What's in it |
 |----------|--------------|
-| [Installation](docs/getting-started/INSTALLATION.md) | Step-by-step setup: OAuth client, extension install, first authentication |
-| [Configuration](docs/getting-started/CONFIGURATION.md) | Skills directory setup and security notes |
+| [Installation](docs/getting-started/INSTALLATION.md) | Step-by-step setup for Claude Desktop or Claude Code: OAuth client, install, first authentication |
+| [Managing IFS Environments](docs/getting-started/ENVIRONMENTS.md) | Registering one or more IFS instances, `authorization_code` vs `client_credentials` |
+| [Configuration](docs/getting-started/CONFIGURATION.md) | Skills directory setup |
 
 ### Guides
 | Document | What's in it |
