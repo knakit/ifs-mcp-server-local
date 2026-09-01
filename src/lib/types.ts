@@ -58,9 +58,10 @@ export function getOAuthParamsForKey(key?: string): OAuthParams {
     };
   }
   // Legacy env-var ("default") mode — always interactive authorization_code.
+  // No client secret: this mode only supports a public OAuth client with PKCE.
+  // Need client_credentials? Register an environment with add_ifs_environment instead.
   return {
     clientId: OAUTH_CONFIG.clientId,
-    clientSecret: process.env.OAUTH_CLIENT_SECRET || undefined,
     tokenUrl: OAUTH_CONFIG.tokenUrl,
     authMode: "authorization_code",
   };
