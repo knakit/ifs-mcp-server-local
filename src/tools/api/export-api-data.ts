@@ -1,6 +1,6 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { OAuthManager } from "../../lib/auth/oauth-manager.js";
-import { callProtectedApi } from "../../lib/api-client.js";
+import { callProtectedApi, disallowedHeaders, ALLOWED_REQUEST_HEADERS } from "../../lib/api-client.js";
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -13,7 +13,7 @@ export const definition: Tool = {
     openWorldHint: true,
   },
   description:
-    "Export large API result sets to a CSV file. Fetches data in batches of 100 records using $top/$skip pagination and saves to ~/.ifs-mcp/exports/. Use this when call_protected_api returns a 'Response too large' warning.",
+    "Export large API result sets to a CSV file. Fetches data in batches of 100 records using $top/$skip pagination and saves to ~/Downloads/ (or ~/.ifs-mcp/exports/ if that doesn't exist). Use this when call_protected_api returns a 'Response too large' warning. Keyed/singleton endpoints (e.g. CompanySet(Company='10')) are also supported — exported as a single row, without pagination.",
   inputSchema: {
     type: "object",
     properties: {
@@ -41,6 +41,11 @@ export const definition: Tool = {
       body: {
         type: "object",
         description: "Request body (for POST/PUT/PATCH)",
+      },
+      headers: {
+        type: "object",
+        description: "Optional request headers. Only If-Match, If-None-Match, and X-IFS-Content-Disposition are allowed — any other header is rejected.",
+        additionalProperties: { type: "string" },
       },
     },
     required: ["endpoint", "method"],
@@ -84,9 +89,29 @@ function appendEndpointParam(endpoint: string, param: string): string {
   return endpoint.includes("?") ? `${endpoint}&${param}` : `${endpoint}?${param}`;
 }
 
+// A keyed OData endpoint (e.g. CompanySet(Company='10')) addresses a single
+// entity, per the OData URL convention of a parenthesised key right after the
+// entity-set name. It returns a bare object, not a { value: [...] } collection,
+// and IFS rejects $skip on it outright — so pagination must never be applied.
+function looksLikeKeyedEndpoint(endpoint: string): boolean {
+  return endpoint.split("?")[0].trim().endsWith(")");
+}
+
 export async function handler(args: any, oauthManager: OAuthManager) {
-  const { endpoint, method, filename = "export", sessionId, body, environment } = args;
+  const { endpoint, method, filename = "export", sessionId, body, environment, headers } = args;
   const effectiveSessionId = sessionId ?? environment;
+
+  const badHeaders = disallowedHeaders(headers);
+  if (badHeaders.length > 0) {
+    return {
+      content: [{ type: "text" as const, text: JSON.stringify({
+        error: "disallowed_headers",
+        message: `These headers are not allowed: ${badHeaders.join(", ")}. Only ${[...ALLOWED_REQUEST_HEADERS].join(", ")} are permitted.`,
+        disallowed: badHeaders,
+      }, null, 2) }],
+      isError: true,
+    };
+  }
 
   const downloadsDir = path.join(os.homedir(), "Downloads");
   const exportDir = fs.existsSync(downloadsDir) ? downloadsDir : path.join(os.homedir(), ".ifs-mcp", "exports");
@@ -97,15 +122,13 @@ export async function handler(args: any, oauthManager: OAuthManager) {
 
   const baseEndpoint = stripPaginationParams(endpoint);
   let allRecords: any[] = [];
-  let skip = 0;
   let batchCount = 0;
 
   try {
-    while (true) {
-      let batchEndpoint = appendEndpointParam(baseEndpoint, `$top=${BATCH_SIZE}&$skip=${skip}`);
-
+    if (looksLikeKeyedEndpoint(baseEndpoint)) {
+      // Singleton: one request, no $top/$skip.
       const result = await callProtectedApi(
-        { endpoint: batchEndpoint, method, sessionId: effectiveSessionId, body },
+        { endpoint: baseEndpoint, method, sessionId: effectiveSessionId, body, headers },
         oauthManager
       );
 
@@ -116,8 +139,6 @@ export async function handler(args: any, oauthManager: OAuthManager) {
               type: "text" as const,
               text: JSON.stringify({
                 error: "API call failed during export",
-                batch: batchCount + 1,
-                records_exported_so_far: allRecords.length,
                 details: result.message || result.error,
               }, null, 2),
             },
@@ -126,18 +147,52 @@ export async function handler(args: any, oauthManager: OAuthManager) {
         };
       }
 
-      const records = result.data?.value;
-      if (!Array.isArray(records) || records.length === 0) {
-        break;
-      }
+      // Normally a bare entity object; accept a { value: [...] } shape too in
+      // case the keyed-endpoint heuristic guessed wrong about this URL.
+      allRecords = Array.isArray(result.data?.value)
+        ? result.data.value
+        : (result.data ? [result.data] : []);
+      batchCount = 1;
+    } else {
+      let skip = 0;
+      while (true) {
+        let batchEndpoint = appendEndpointParam(baseEndpoint, `$top=${BATCH_SIZE}&$skip=${skip}`);
 
-      allRecords.push(...records);
-      batchCount++;
-      skip += BATCH_SIZE;
+        const result = await callProtectedApi(
+          { endpoint: batchEndpoint, method, sessionId: effectiveSessionId, body, headers },
+          oauthManager
+        );
 
-      // If we got fewer than BATCH_SIZE, we've reached the end
-      if (records.length < BATCH_SIZE) {
-        break;
+        if (!result.success) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify({
+                  error: "API call failed during export",
+                  batch: batchCount + 1,
+                  records_exported_so_far: allRecords.length,
+                  details: result.message || result.error,
+                }, null, 2),
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        const records = result.data?.value;
+        if (!Array.isArray(records) || records.length === 0) {
+          break;
+        }
+
+        allRecords.push(...records);
+        batchCount++;
+        skip += BATCH_SIZE;
+
+        // If we got fewer than BATCH_SIZE, we've reached the end
+        if (records.length < BATCH_SIZE) {
+          break;
+        }
       }
     }
 

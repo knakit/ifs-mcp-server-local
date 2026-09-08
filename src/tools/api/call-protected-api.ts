@@ -1,6 +1,6 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { OAuthManager } from "../../lib/auth/oauth-manager.js";
-import { callProtectedApi } from "../../lib/api-client.js";
+import { callProtectedApi, disallowedHeaders, ALLOWED_REQUEST_HEADERS } from "../../lib/api-client.js";
 import { loadConfig, getEnvironment } from "../../lib/config.js";
 
 export const definition: Tool = {
@@ -22,7 +22,9 @@ export const definition: Tool = {
     "and use the build_ifs_skill_guide prompt to create a skill for it.' " +
     "If the response contains error 'authentication_required', immediately call start_oauth — do not relay the error to the user or ask them to authenticate manually. " +
     "Targets the active IFS environment unless 'environment' is given. " +
-    "If the response contains error 'no_environment_selected', do not guess — show the user the listed environments and ask which one to use, then call use_ifs_environment.",
+    "If the response contains error 'no_environment_selected', do not guess — show the user the listed environments and ask which one to use, then call use_ifs_environment. " +
+    "Pass an If-Match header for conditional PATCH/DELETE on projections that require optimistic concurrency (check the API guide or a prior GET response's @odata.etag). " +
+    "Pass X-IFS-Content-Disposition to set the filename IFS uses for a file upload/download.",
   inputSchema: {
     type: "object",
     properties: {
@@ -46,6 +48,11 @@ export const definition: Tool = {
       body: {
         type: "object",
         description: "Request body (for POST/PUT/PATCH)",
+      },
+      headers: {
+        type: "object",
+        description: "Optional request headers. Only If-Match, If-None-Match (OData optimistic concurrency) and X-IFS-Content-Disposition (IFS's custom header for naming an uploaded/downloaded file) are allowed — any other header is rejected.",
+        additionalProperties: { type: "string" },
       },
     },
     required: ["endpoint", "method"],
@@ -87,7 +94,16 @@ function guardError(payload: Record<string, unknown>) {
 }
 
 export async function handler(args: any, oauthManager: OAuthManager) {
-  const { sessionId, endpoint, method, body, environment } = args;
+  const { sessionId, endpoint, method, body, environment, headers } = args;
+
+  const badHeaders = disallowedHeaders(headers);
+  if (badHeaders.length > 0) {
+    return guardError({
+      error: "disallowed_headers",
+      message: `These headers are not allowed: ${badHeaders.join(", ")}. Only ${[...ALLOWED_REQUEST_HEADERS].join(", ")} are permitted.`,
+      disallowed: badHeaders,
+    });
+  }
 
   const config = loadConfig();
   const envNames = Object.keys(config.environments);
@@ -134,7 +150,7 @@ export async function handler(args: any, oauthManager: OAuthManager) {
   const effectiveSessionId = sessionId ?? environment;
 
   const result = await callProtectedApi(
-    { endpoint, method, sessionId: effectiveSessionId, body },
+    { endpoint, method, sessionId: effectiveSessionId, body, headers },
     oauthManager
   );
 

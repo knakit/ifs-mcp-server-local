@@ -57,7 +57,7 @@ Default to `authorization_code` whenever a person is actually present to click t
 
 ## Switching, listing, and removing
 
-- **`list_ifs_environments`** — shows every registered environment, which one is active, and whether it's currently authenticated.
+- **`list_ifs_environments`** — shows every registered environment, which one is active, and whether it's currently authenticated. Also returns `diagnostics` (the resolved `homeDir`/`configFile` this process is actually reading) — check this first if a host shows no environments you know you've registered elsewhere; it can mean that host resolved a different config file (e.g. a different user profile, or WSL vs native Windows).
 - **`use_ifs_environment`** — *"switch to test"* — changes which environment subsequent calls target. Each environment keeps its own saved session, so switching back to `prod` doesn't log you out of it.
 - **`remove_ifs_environment`** — deletes an environment and its saved session/token together.
 

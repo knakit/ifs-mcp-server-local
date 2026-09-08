@@ -1,5 +1,5 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { listEnvironments, authModeOf } from "../../lib/config.js";
+import { listEnvironments, authModeOf, getConfigDiagnostics } from "../../lib/config.js";
 import { loadSessions } from "../../lib/auth/session-manager.js";
 
 export const definition: Tool = {
@@ -47,8 +47,9 @@ export async function handler() {
         text: JSON.stringify({
           activeEnvironment: config.activeEnv,
           environments,
+          diagnostics: getConfigDiagnostics(),
           ...(environments.length === 0
-            ? { hint: "No environments configured. Use add_ifs_environment to add one." }
+            ? { hint: "No environments configured. Use add_ifs_environment to add one. If you expected environments to already be here, check `diagnostics.configFile` above — a host that launches this process in an unexpected context (different user profile, WSL vs native Windows, etc.) can silently resolve a different config.json than the one you edited." }
             : {}),
         }, null, 2),
       },

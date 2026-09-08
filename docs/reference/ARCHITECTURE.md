@@ -94,7 +94,8 @@
         │  ┌──────────────────────────────────────────────────────────┐  │
         │  │            Token Store (token-store.ts)                  │  │
         │  │  • In-memory Map<sessionId, TokenData>                   │  │
-        │  │  • Stores: accessToken, refreshToken, expiresAt, userId  │  │
+        │  │  • Stores: accessToken, refreshToken, expiresAt,         │  │
+        │  │    issuedAt, userId                                        │  │
         │  └──────────────────────────────────────────────────────────┘  │
         └────────────────────────────────────────────────────────────────┘
                     │                                    │
@@ -120,11 +121,11 @@ MCP protocol handler. Registers tool, resource, and prompt definitions. Routes t
 Express server on `http://localhost:3000`. Started **on-demand** by the `start_oauth` tool (not at process boot) — not running at any other time. Handles `/oauth/callback` redirects, exchanges auth codes for tokens, saves sessions to disk. Never used at all for `client_credentials` environments, which authenticate without a browser.
 
 ### 4. API Client (`src/lib/api-client.ts`)
-Authenticated HTTP client. Resolves the base URL per-environment via `getApiBaseUrlForKey()` (falls back to the legacy flat `API_BASE_URL` env var), attaches Bearer token, used by all tools.
+Authenticated HTTP client. Resolves the base URL per-environment via `getApiBaseUrlForKey()` (falls back to the legacy flat `API_BASE_URL` env var), attaches Bearer token, used by all tools. Exports `ALLOWED_REQUEST_HEADERS`/`disallowedHeaders()` — the allowlist tool handlers validate caller-supplied headers against (`If-Match`, `If-None-Match`, `X-IFS-Content-Disposition`). The header merge also spreads caller headers first, so they can never override `Authorization`/`Accept`/`Content-Type` even if a tool's own validation were bypassed — defense in depth, not the primary guard.
 
 ### 5. Authentication Layer
 
-**OAuth Manager** (`src/lib/auth/oauth-manager.ts`) - OAuth 2.0 + PKCE flow orchestration for `authorization_code` environments, plus `clientCredentialsToken()` for machine-to-machine auth on `client_credentials` environments. Automatic token refresh/re-fetch with a 5-minute expiry buffer either way.
+**OAuth Manager** (`src/lib/auth/oauth-manager.ts`) - OAuth 2.0 + PKCE flow orchestration for `authorization_code` environments, plus `clientCredentialsToken()` for machine-to-machine auth on `client_credentials` environments. Automatic token refresh/re-fetch via `refreshMarginMs()`, scaled to each token's own lifetime (10%, floored at 5s, capped at 30s) rather than a fixed buffer — a fixed 5-minute buffer meant any environment issuing shorter-lived tokens (some `client_credentials` setups do) would re-fetch a token before every single API call. Sessions persisted before this existed have no `issuedAt` and fall back to the old fixed 5-minute buffer once, then pick up the scaled margin on their next renewal.
 
 **Session Manager** (`src/lib/auth/session-manager.ts`) - Persists sessions to `~/.ifs-mcp/session.json`, keyed per environment; restores on startup.
 
@@ -147,9 +148,9 @@ Session/token keys are the active environment's name (or `"default"` in legacy e
 | `remove_ifs_environment` | Environment | Delete an environment and its saved session |
 | `start_oauth` | Auth | Initiate OAuth flow (browser for `authorization_code`; silent token fetch for `client_credentials`) |
 | `get_session_info` | Auth | Check session status for the active environment |
-| `call_protected_api` | API | Generic authenticated API calls; accepts an optional `environment` override |
+| `call_protected_api` | API | Generic authenticated API calls; accepts an optional `environment` override and an allowlisted `headers` map (`If-Match`, `If-None-Match`, `X-IFS-Content-Disposition`) |
 | `get_api_guide` | API | Retrieve API guide for a specific IFS projection |
-| `export_api_data` | API | Export large result sets to CSV with automatic pagination |
+| `export_api_data` | API | Export large result sets to CSV with automatic pagination; keyed/singleton endpoints export as one row with no pagination |
 | `import_skill` | Skills | Import a skill `.md` from a URL or local file path |
 | `save_skill` | Skills | Save or update a skill `.md`; returns a change diff for updates |
 | `parse_har_file` | Skill authoring | Parse a browser HAR file; returns structured summary of IFS API operations |
@@ -239,7 +240,7 @@ All paths converge:
 
 1. **Dual Server Architecture** - Express for browser OAuth callbacks (started on-demand, not at boot) + MCP stdio for the client, whichever it is. Both in one process when the callback server is running.
 2. **Session Persistence** - Sessions survive restarts via `~/.ifs-mcp/session.json`, keyed per environment. LLM doesn't need to track session IDs. Refreshed tokens are also persisted so sessions continue seamlessly after restarts.
-3. **Automatic Token Refresh** - Transparent to LLM. 5-minute expiry buffer in `getAccessToken()`.
+3. **Automatic Token Refresh** - Transparent to LLM. Lifetime-scaled margin in `getAccessToken()` (`refreshMarginMs()`) — not a fixed buffer, so short-lived tokens aren't re-fetched before every call.
 4. **Modular Tool Design** - Each tool exports `definition` + `handler`. Registered in `tools/index.ts`.
 5. **Resource-Driven API Knowledge** - Instead of hardcoding tools per endpoint, API guides (markdown) teach the LLM how to use `call_protected_api`. Users can add new guides without code changes.
 6. **Three Skill Authoring Paths** - HAR-based authoring captures real browser traffic (what users actually do). OpenAPI-based authoring uses the projection's `$openapi?V2` spec (full CRUD surface with typed field schemas) — either live-fetched or from a local file. HAR is better for transactional workflows; OpenAPI is better for master data. All three paths converge into the same guided Q&A and `save_skill` flow. `skill_name` is provided upfront so Claude saves with the correct filename without asking.
@@ -285,7 +286,7 @@ src/
     └── api/
         ├── call-protected-api.ts     # Generic API calls
         ├── get-api-guide.ts          # Retrieve API guides from resources
-        ├── export-api-data.ts        # Paginated CSV export
+        ├── export-api-data.ts        # Paginated CSV export (or single-row for keyed/singleton endpoints)
         ├── import-skill.ts           # Import skill from URL or file
         ├── save-skill.ts             # Save/update skill with change diff
         ├── parse-har-file.ts         # Parse browser HAR file for skill authoring

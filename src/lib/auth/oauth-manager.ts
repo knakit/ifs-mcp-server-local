@@ -19,6 +19,27 @@ function generateCodeChallenge(verifier: string): string {
 
 const PENDING_AUTH_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
+// Renewal margin: how long before expiry we treat a token as "needs renewing".
+// A fixed 5-minute margin (the old behavior) breaks any IFS environment that
+// issues shorter-lived tokens — e.g. a 180s client_credentials token would
+// always be "expiring" the instant it's issued, forcing a fresh token
+// acquisition before every single API call. Scale the margin to the token's
+// own lifetime instead: 10% of it, bounded so we never wait less than 5s
+// (clock skew / latency floor) or more than 30s (don't burn too much of a
+// short-lived token waiting to renew early).
+const MIN_REFRESH_MARGIN_MS = 5_000;
+const MAX_REFRESH_MARGIN_MS = 30_000;
+// Sessions persisted before `issuedAt` existed have no lifetime to scale
+// from — fall back to the old fixed buffer once; the next acquisition will
+// populate issuedAt and switch this session over to the scaled margin.
+const LEGACY_SESSION_FALLBACK_MARGIN_MS = 300_000;
+
+function refreshMarginMs(session: TokenData): number {
+  if (session.issuedAt === undefined) return LEGACY_SESSION_FALLBACK_MARGIN_MS;
+  const lifetimeMs = session.expiresAt - session.issuedAt;
+  return Math.max(MIN_REFRESH_MARGIN_MS, Math.min(MAX_REFRESH_MARGIN_MS, lifetimeMs * 0.1));
+}
+
 // OAuth flow manager
 export class OAuthManager {
   private pendingAuths = new Map<string, {
@@ -95,10 +116,12 @@ export class OAuthManager {
 
     // Token is keyed by environment so each environment stays independently
     // authenticated.
+    const now = Date.now();
     const sessionData: TokenData = {
       accessToken: access_token,
       refreshToken: refresh_token,
-      expiresAt: Date.now() + expires_in * 1000,
+      expiresAt: now + expires_in * 1000,
+      issuedAt: now,
       userId: pending.sessionKey,
     };
 
@@ -131,10 +154,12 @@ export class OAuthManager {
 
     const { access_token, refresh_token, expires_in } = response.data;
 
+    const now = Date.now();
     const updated: TokenData = {
       accessToken: access_token,
       refreshToken: refresh_token || session.refreshToken,
-      expiresAt: Date.now() + expires_in * 1000,
+      expiresAt: now + expires_in * 1000,
+      issuedAt: now,
       userId: session.userId,
     };
 
@@ -168,9 +193,11 @@ export class OAuthManager {
     );
 
     const { access_token, expires_in } = response.data;
+    const now = Date.now();
     const data: TokenData = {
       accessToken: access_token,
-      expiresAt: Date.now() + expires_in * 1000,
+      expiresAt: now + expires_in * 1000,
+      issuedAt: now,
       userId: sessionKey,
     };
 
@@ -192,8 +219,8 @@ export class OAuthManager {
       throw new Error("No session found. Please authenticate first.");
     }
 
-    // Renew if expired or about to expire (5 min buffer).
-    if (session.expiresAt < Date.now() + 300000) {
+    // Renew if expired or within the scaled margin of expiring.
+    if (session.expiresAt < Date.now() + refreshMarginMs(session)) {
       if (authMode === "client_credentials") {
         await this.clientCredentialsToken(sessionId);
       } else {

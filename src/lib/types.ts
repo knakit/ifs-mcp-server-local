@@ -72,5 +72,8 @@ export interface TokenData {
   accessToken: string;
   refreshToken?: string;
   expiresAt: number;
+  /** When this token was issued. Absent on sessions persisted before this
+   * field existed — see refreshMarginMs() in oauth-manager.ts. */
+  issuedAt?: number;
   userId: string;
 }

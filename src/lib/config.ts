@@ -125,6 +125,17 @@ export function useEnvironment(name: string): IfsConfig {
   return config;
 }
 
+/**
+ * Non-secret diagnostics: where this process resolved its home directory and
+ * config file. A host that launches the server in an unexpected context
+ * (e.g. a different user profile, or WSL vs native Windows) can silently
+ * resolve a different config.json than the one you edited — this makes that
+ * visible instead of just reporting "no environment configured".
+ */
+export function getConfigDiagnostics(): { homeDir: string; configFile: string } {
+  return { homeDir: os.homedir(), configFile: CONFIG_FILE };
+}
+
 export function removeEnvironment(name: string): IfsConfig {
   const config = loadConfig();
   delete config.environments[name];

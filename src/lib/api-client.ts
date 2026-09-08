@@ -11,6 +11,23 @@ export interface ApiCallOptions {
   headers?: Record<string, string>;
 }
 
+// Only headers with a legitimate, narrow purpose are allowed through from
+// tool input: OData optimistic concurrency (If-Match/If-None-Match), and
+// IFS's own custom header for naming a file on upload/download responses.
+// Anything else (Authorization, Host, proxy headers, etc.) is rejected
+// before it ever reaches this client.
+export const ALLOWED_REQUEST_HEADERS = new Set([
+  "if-match",
+  "if-none-match",
+  "x-ifs-content-disposition",
+]);
+
+/** Returns the caller-supplied header names that aren't allowed, or [] if all are fine. */
+export function disallowedHeaders(headers?: Record<string, string>): string[] {
+  if (!headers) return [];
+  return Object.keys(headers).filter((k) => !ALLOWED_REQUEST_HEADERS.has(k.toLowerCase()));
+}
+
 export interface ApiResponse {
   success: boolean;
   status?: number;
@@ -50,10 +67,14 @@ export async function callProtectedApi(
       // key), so an explicit per-call environment override stays consistent.
       url: `${getApiBaseUrlForKey(sessionId)}${endpoint}`,
       headers: {
+        // Caller headers spread first so they can never override the
+        // server-controlled ones below, regardless of what's passed in —
+        // the allowlist in tool handlers is the primary guard, this is
+        // defense in depth.
+        ...headers,
         Authorization: `Bearer ${accessToken}`,
         "Accept": "application/json",
         "Content-Type": "application/json",
-        ...headers,
       },
     };
 

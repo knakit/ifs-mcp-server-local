@@ -1,7 +1,7 @@
 {
   "name": "ifs-mcp-server",
   "description": "Connect Claude to your IFS Cloud ERP via OAuth 2.0. Query OData APIs, export to CSV, and build reusable API guides.",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "author": {
     "name": "knakit",
     "url": "https://github.com/knakit"

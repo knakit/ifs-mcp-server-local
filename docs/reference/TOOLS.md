@@ -17,7 +17,7 @@ add_ifs_environment({ name: "automation", apiBaseUrl: "...", oauthRealm: "...", 
 **Inputs:** `name`, `apiBaseUrl`, `oauthRealm`, `oauthClientId` (all required); `authMode` (`authorization_code` default, or `client_credentials`); `clientSecret` (required with `client_credentials`); `readOnly` (optional)
 
 #### list_ifs_environments
-List all registered environments, which is active, and whether each is currently authenticated.
+List all registered environments, which is active, and whether each is currently authenticated. Also returns `diagnostics` (the resolved `homeDir`/`configFile` this process is actually reading) — useful when a host launches the server in an unexpected context and it can't see environments you know you registered.
 
 ```
 list_ifs_environments()
@@ -65,9 +65,11 @@ Make authenticated API calls to any IFS Cloud endpoint. This is the core tool �
 call_protected_api({ endpoint: "/main/ifsapplications/...", method: "GET" })
 call_protected_api({ endpoint: "/main/ifsapplications/...", method: "POST", body: {...} })
 call_protected_api({ environment: "test", endpoint: "/main/ifsapplications/...", method: "GET" })
+call_protected_api({ endpoint: "/main/.../CompanySet(Company='10')", method: "PATCH", body: {...}, headers: { "If-Match": "W/\"...\"" } })
+call_protected_api({ endpoint: "/main/.../DocumentUpload", method: "POST", body: {...}, headers: { "X-IFS-Content-Disposition": "attachment; filename=report.pdf" } })
 ```
 
-**Inputs:** `endpoint` (required), `method` (required), `body`, `sessionId`, `environment` (optional — one-off override of the active environment)
+**Inputs:** `endpoint` (required), `method` (required), `body`, `sessionId`, `environment` (optional — one-off override of the active environment), `headers` (optional — only `If-Match`/`If-None-Match` (OData optimistic concurrency) and `X-IFS-Content-Disposition` (IFS's custom filename header) are allowed; any other header is rejected with `disallowed_headers`)
 **Methods:** GET, POST, PUT, DELETE, PATCH
 
 ### 4. get_api_guide
@@ -82,15 +84,16 @@ get_api_guide({ guide: "ifs-sales-customers" })        // Get the Customer Manag
 **Inputs:** `guide` (optional — lists available guides if omitted)
 
 ### 5. export_api_data
-Export large API result sets to a CSV file. Fetches data in batches of 100 records using `$top`/`$skip` pagination and saves to `~/.ifs-mcp/exports/`.
+Export large API result sets to a CSV file. Fetches data in batches of 100 records using `$top`/`$skip` pagination and saves to `~/Downloads/` (or `~/.ifs-mcp/exports/` if that doesn't exist). Keyed/singleton endpoints (e.g. `CompanySet(Company='10')`) are detected automatically and exported as a single row, with no pagination applied — IFS rejects `$skip` on those outright.
 
 ```
 export_api_data({ endpoint: "/main/ifsapplications/...", method: "GET" })
 export_api_data({ endpoint: "/main/ifsapplications/...", method: "GET", filename: "sales-reports" })
 export_api_data({ environment: "test", endpoint: "/main/ifsapplications/...", method: "GET" })
+export_api_data({ endpoint: "/main/.../CompanySet(Company='10')", method: "GET" })  // singleton, no pagination
 ```
 
-**Inputs:** `endpoint` (required), `method` (required), `filename` (optional), `sessionId`, `body`, `environment` (optional)
+**Inputs:** `endpoint` (required), `method` (required), `filename` (optional), `sessionId`, `body`, `environment` (optional), `headers` (optional — same allowlist as `call_protected_api`)
 
 ### 6. import_skill
 Import a skill guide from a URL or local file path. Supports GitHub raw URLs, Gist URLs, or any direct `.md` link. Saves to `SKILLS_DIR` if set, otherwise `build/resources/`. The skill is available immediately — no restart needed.
@@ -213,5 +216,5 @@ import_skill({ source: "https://raw.githubusercontent.com/knakit/ifs-mcp-skills/
 - Register at least one environment first (see [Managing IFS Environments](../getting-started/ENVIRONMENTS.md)), or set the legacy `API_BASE_URL`/`OAUTH_REALM`/`OAUTH_CLIENT_ID` env vars
 - Authenticate via `start_oauth` — opens a browser for `authorization_code` environments; for `client_credentials` environments it fetches a token silently, no browser involved
 - Sessions are saved to `~/.ifs-mcp/session.json`, keyed per environment, and persist across restarts
-- Tokens are auto-refreshed (or, for `client_credentials`, re-fetched) when nearing expiry (5-minute buffer)
+- Tokens are auto-refreshed (or, for `client_credentials`, re-fetched) when nearing expiry — the margin scales to the token's own lifetime (10%, floored at 5s, capped at 30s) rather than a fixed buffer, so short-lived tokens (some IFS environments issue client_credentials tokens under 5 minutes) don't get re-fetched before every single call
 - Optional `sessionId`/`environment` parameters available to target a non-active environment for a single call
