@@ -42,6 +42,10 @@ fi
 rm -rf "$STAGE/node_modules/$SDK_UNSCOPED/dist/cjs" "$STAGE/node_modules/zod/src"
 find "$STAGE/node_modules" -type f \( -name '*.map' -o -iname 'README*' -o -iname 'CHANGELOG*' -o -iname 'HISTORY*' \) -delete
 
+# npm can leave empty directories behind (e.g. node_modules/@types when only dev
+# dependencies live under that scope). They aren't shipped, so drop them before the check.
+find "$STAGE" -type d -empty -delete
+
 # Fail early on any path Cowork's uploader may reject (it reports "invalid characters").
 UNSAFE=$(cd "$STAGE" && find . -print | grep -E '[^A-Za-z0-9._/-]' || true)
 if [ -n "$UNSAFE" ]; then
