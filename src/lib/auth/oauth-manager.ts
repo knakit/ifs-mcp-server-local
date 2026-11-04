@@ -3,7 +3,7 @@ import axios from "axios";
 import { OAUTH_CONFIG, TokenData, getOAuthParamsForKey } from "../types.js";
 import { tokenStore } from "./token-store.js";
 import { saveSession } from "./session-manager.js";
-import { getActiveSessionKey } from "../config.js";
+import { getActiveSessionKey, getClientSecret, clientSecretEnvVar, getConfigDiagnostics } from "../config.js";
 
 // PKCE helper functions
 function generateCodeVerifier(): string {
@@ -173,24 +173,38 @@ export class OAuthManager {
   // authMode === "client_credentials". Client-credentials responses carry no
   // refresh token, so renewal just re-requests.
   async clientCredentialsToken(sessionKey: string): Promise<void> {
-    const { clientId, clientSecret, tokenUrl } = getOAuthParamsForKey(sessionKey);
+    const { clientId, tokenUrl } = getOAuthParamsForKey(sessionKey);
+    // The one place a client secret is read. It is never logged, returned, or
+    // placed in an error message — see getClientSecret() in config.ts.
+    const clientSecret = getClientSecret(sessionKey);
     if (!clientSecret) {
       throw new Error(
-        `Environment '${sessionKey}' uses client_credentials but has no client secret. Re-add it with add_ifs_environment including clientSecret.`
+        `Environment '${sessionKey}' uses client_credentials but no client secret is configured. ` +
+        `Never send the secret through chat. Set the ${clientSecretEnvVar(sessionKey)} environment variable, ` +
+        `or add "clientSecret" to environments.${sessionKey} in ${getConfigDiagnostics().configFile}, then retry.`
       );
     }
 
-    const response = await axios.post(
-      tokenUrl,
-      {
-        grant_type: "client_credentials",
-        client_id: clientId,
-        client_secret: clientSecret,
-      },
-      {
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      }
-    );
+    let response;
+    try {
+      response = await axios.post(
+        tokenUrl,
+        {
+          grant_type: "client_credentials",
+          client_id: clientId,
+          client_secret: clientSecret,
+        },
+        {
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        }
+      );
+    } catch (err: any) {
+      // Rethrow without the axios error object: its `config.data` holds the request
+      // body, which includes the client secret.
+      const status = err?.response?.status;
+      const detail = err?.response?.data?.error_description || err?.response?.data?.error || err?.code || "request failed";
+      throw new Error(`Token request for environment '${sessionKey}' failed${status ? ` (HTTP ${status})` : ""}: ${detail}`);
+    }
 
     const { access_token, expires_in } = response.data;
     const now = Date.now();

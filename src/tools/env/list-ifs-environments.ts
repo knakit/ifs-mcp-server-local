@@ -1,5 +1,5 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { listEnvironments, authModeOf, getConfigDiagnostics } from "../../lib/config.js";
+import { listEnvironments, authModeOf, getConfigDiagnostics, clientSecretSource, clientSecretEnvVar } from "../../lib/config.js";
 import { loadSessions } from "../../lib/auth/session-manager.js";
 
 export const definition: Tool = {
@@ -34,6 +34,13 @@ export async function handler() {
       apiBaseUrl: env.apiBaseUrl,
       oauthRealm: env.oauthRealm,
       authMode: authModeOf(env),
+      // Where the client secret comes from ("env" | "config" | "missing") — never the value.
+      ...(authModeOf(env) === "client_credentials"
+        ? {
+            clientSecretSource: clientSecretSource(name),
+            ...(clientSecretSource(name) === "missing" ? { clientSecretEnvVar: clientSecretEnvVar(name) } : {}),
+          }
+        : {}),
       readOnly: !!env.readOnly,
       active: config.activeEnv === name,
       authStatus,

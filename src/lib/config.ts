@@ -17,17 +17,33 @@ const CONFIG_FILE = path.join(CONFIG_DIR, "config.json");
  */
 export type IfsAuthMode = "authorization_code" | "client_credentials";
 
+/**
+ * A registered environment. Deliberately has no client secret: nothing outside
+ * getClientSecret() below ever sees one. The secret is supplied out of band —
+ * an env var or a hand-edited `clientSecret` in config.json — never through chat.
+ */
 export interface IfsEnvironment {
   apiBaseUrl: string;
   oauthRealm: string;
   oauthClientId: string;
   /** Defaults to "authorization_code". */
   authMode?: IfsAuthMode;
-  /** Required when authMode === "client_credentials". Confidential client secret. */
-  clientSecret?: string;
   /** When true, call_protected_api blocks non-GET methods for this environment. */
   readOnly?: boolean;
 }
+
+/** On-disk shape. Only this file's internals handle the `clientSecret` field. */
+interface StoredEnvironment extends IfsEnvironment {
+  clientSecret?: string;
+}
+
+interface StoredConfig {
+  activeEnv: string | null;
+  environments: Record<string, StoredEnvironment>;
+}
+
+/** Where a client_credentials environment's secret comes from. Never the value itself. */
+export type ClientSecretSource = "env" | "config" | "missing";
 
 /** Effective auth mode for an environment (defaults to authorization_code). */
 export function authModeOf(env: IfsEnvironment | null | undefined): IfsAuthMode {
@@ -45,7 +61,10 @@ function ensureDir() {
   }
 }
 
-export function loadConfig(): IfsConfig {
+// Reads config.json as stored, including any hand-edited `clientSecret`.
+// Private: it exists so add/use/remove can rewrite the file without dropping a
+// secret the user added by hand. Callers outside this module get loadConfig().
+function readStoredConfig(): StoredConfig {
   try {
     if (fs.existsSync(CONFIG_FILE)) {
       const raw = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf-8"));
@@ -60,7 +79,7 @@ export function loadConfig(): IfsConfig {
   return { activeEnv: null, environments: {} };
 }
 
-export function saveConfig(config: IfsConfig) {
+function writeStoredConfig(config: StoredConfig) {
   ensureDir();
   fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
   try {
@@ -68,6 +87,21 @@ export function saveConfig(config: IfsConfig) {
   } catch {
     // chmod unsupported (e.g. some Windows setups) — non-fatal
   }
+}
+
+/** Copy of a stored config with every client secret removed. */
+function withoutSecrets(stored: StoredConfig): IfsConfig {
+  const environments: Record<string, IfsEnvironment> = {};
+  for (const [name, env] of Object.entries(stored.environments)) {
+    const { clientSecret: _omit, ...publicEnv } = env;
+    environments[name] = publicEnv;
+  }
+  return { activeEnv: stored.activeEnv, environments };
+}
+
+/** Config as seen by every tool: environments only, never a client secret. */
+export function loadConfig(): IfsConfig {
+  return withoutSecrets(readStoredConfig());
 }
 
 /** Name of the currently selected environment, or null. */
@@ -99,30 +133,36 @@ export function listEnvironments(): IfsConfig {
   return loadConfig();
 }
 
+/**
+ * Register or update an environment. Takes no secret: an existing `clientSecret`
+ * the user added to config.json by hand is carried over untouched so that
+ * re-running this never deletes it.
+ */
 export function addEnvironment(name: string, env: IfsEnvironment): IfsConfig {
-  const config = loadConfig();
-  config.environments[name] = {
+  const stored = readStoredConfig();
+  const existingSecret = stored.environments[name]?.clientSecret;
+  stored.environments[name] = {
     apiBaseUrl: env.apiBaseUrl.replace(/\/+$/, ""),
     oauthRealm: env.oauthRealm,
     oauthClientId: env.oauthClientId,
     ...(env.authMode === "client_credentials" ? { authMode: "client_credentials" as const } : {}),
-    ...(env.clientSecret ? { clientSecret: env.clientSecret } : {}),
     ...(env.readOnly ? { readOnly: true } : {}),
+    ...(existingSecret ? { clientSecret: existingSecret } : {}),
   };
   // First environment added becomes active automatically.
-  if (!config.activeEnv) config.activeEnv = name;
-  saveConfig(config);
-  return config;
+  if (!stored.activeEnv) stored.activeEnv = name;
+  writeStoredConfig(stored);
+  return withoutSecrets(stored);
 }
 
 export function useEnvironment(name: string): IfsConfig {
-  const config = loadConfig();
-  if (!config.environments[name]) {
+  const stored = readStoredConfig();
+  if (!stored.environments[name]) {
     throw new Error(`Environment '${name}' not found. Add it with add_ifs_environment first.`);
   }
-  config.activeEnv = name;
-  saveConfig(config);
-  return config;
+  stored.activeEnv = name;
+  writeStoredConfig(stored);
+  return withoutSecrets(stored);
 }
 
 /**
@@ -137,12 +177,41 @@ export function getConfigDiagnostics(): { homeDir: string; configFile: string } 
 }
 
 export function removeEnvironment(name: string): IfsConfig {
-  const config = loadConfig();
-  delete config.environments[name];
-  if (config.activeEnv === name) {
-    const remaining = Object.keys(config.environments);
-    config.activeEnv = remaining.length === 1 ? remaining[0] : null;
+  const stored = readStoredConfig();
+  delete stored.environments[name];
+  if (stored.activeEnv === name) {
+    const remaining = Object.keys(stored.environments);
+    stored.activeEnv = remaining.length === 1 ? remaining[0] : null;
   }
-  saveConfig(config);
-  return config;
+  writeStoredConfig(stored);
+  return withoutSecrets(stored);
+}
+
+/** Env var that supplies an environment's client secret: IFS_CLIENT_SECRET_<NAME>. */
+export function clientSecretEnvVar(name: string): string {
+  return `IFS_CLIENT_SECRET_${name.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`;
+}
+
+/**
+ * Where an environment's client secret is configured — never the secret itself.
+ * Presence checks only; safe for list/add/diagnostic output.
+ */
+export function clientSecretSource(name: string): ClientSecretSource {
+  if (process.env[clientSecretEnvVar(name)]) return "env";
+  if (readStoredConfig().environments[name]?.clientSecret) return "config";
+  return "missing";
+}
+
+/**
+ * Returns an environment's client secret: the IFS_CLIENT_SECRET_<NAME> env var
+ * first, then a `clientSecret` hand-edited into config.json.
+ *
+ * ONLY OAuthManager.clientCredentialsToken() may call this — it is the one place
+ * a secret is used. scripts/check-secret-access.mjs enforces that in CI. Never
+ * log, return, or include the result in any tool output.
+ */
+export function getClientSecret(name: string): string | undefined {
+  const fromEnv = process.env[clientSecretEnvVar(name)];
+  if (fromEnv) return fromEnv;
+  return readStoredConfig().environments[name]?.clientSecret || undefined;
 }

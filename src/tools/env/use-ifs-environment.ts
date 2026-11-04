@@ -1,5 +1,5 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { useEnvironment, listEnvironments, getEnvironment, authModeOf } from "../../lib/config.js";
+import { useEnvironment, listEnvironments, getEnvironment, authModeOf, clientSecretSource, clientSecretEnvVar } from "../../lib/config.js";
 import { loadSessions } from "../../lib/auth/session-manager.js";
 
 export const definition: Tool = {
@@ -56,7 +56,9 @@ export async function handler(args: any) {
           hint: authed
             ? "Already authenticated for this environment. You can make IFS calls now."
             : mode === "client_credentials"
-              ? "This environment uses client credentials — it authenticates automatically on the first IFS call. No browser login needed."
+              ? (clientSecretSource(name) === "missing"
+                  ? `This environment uses client credentials but has no client secret yet. Ask the user to set the ${clientSecretEnvVar(name)} environment variable or add "clientSecret" to this environment in config.json themselves — never through chat.`
+                  : "This environment uses client credentials — it authenticates automatically on the first IFS call. No browser login needed.")
               : "Not authenticated for this environment yet — call start_oauth.",
         }, null, 2),
       },

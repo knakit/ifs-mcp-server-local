@@ -41,7 +41,6 @@ export function getApiBaseUrlForKey(key?: string): string {
 
 export interface OAuthParams {
   clientId: string;
-  clientSecret?: string;
   tokenUrl: string;
   authMode: IfsAuthMode;
 }
@@ -52,14 +51,14 @@ export function getOAuthParamsForKey(key?: string): OAuthParams {
     const base = env.apiBaseUrl.replace(/\/+$/, "");
     return {
       clientId: env.oauthClientId,
-      clientSecret: env.clientSecret,
       tokenUrl: `${base}/auth/realms/${env.oauthRealm}/protocol/openid-connect/token`,
       authMode: authModeOf(env),
     };
   }
   // Legacy env-var ("default") mode — always interactive authorization_code.
   // No client secret: this mode only supports a public OAuth client with PKCE.
-  // Need client_credentials? Register an environment with add_ifs_environment instead.
+  // Need client_credentials? Register an environment with add_ifs_environment, then
+  // supply the secret out of band (env var or config.json) — see getClientSecret().
   return {
     clientId: OAUTH_CONFIG.clientId,
     tokenUrl: OAUTH_CONFIG.tokenUrl,
