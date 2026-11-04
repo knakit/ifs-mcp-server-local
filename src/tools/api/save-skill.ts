@@ -21,7 +21,7 @@ export const definition: Tool = {
   description:
     "Save an IFS resource guide (skill) to the skills library. " +
     "For new skills, writes immediately. For existing skills, writes the update and returns a summary of what changed. " +
-    "Call this after drafting a skill with build_ifs_skill_guide.",
+    "Call this after drafting a skill with the ifs-skill-authoring guide (or the build_ifs_skill_from_* prompts), and only after the user has confirmed the projection and filename.",
   inputSchema: {
     type: "object",
     properties: {

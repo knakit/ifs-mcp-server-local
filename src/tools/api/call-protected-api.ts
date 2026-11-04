@@ -16,10 +16,8 @@ export const definition: Tool = {
     "Guessing them will produce 404 errors or silently return wrong data. " +
     "You MUST call get_api_guide first to get the correct endpoint and query pattern for the workflow — do not skip this step even if you think you know the endpoint. " +
     "Do NOT call $metadata, probe unknown paths, or construct endpoints from scratch. " +
-    "If get_api_guide returns no matching guide, stop and tell the user: " +
-    "'I don't have a skill for that workflow yet. Please perform this action in IFS Cloud in your browser, " +
-    "then export a HAR file from DevTools (Network tab → right-click → Save all as HAR with content) " +
-    "and use the build_ifs_skill_guide prompt to create a skill for it.' " +
+    "If get_api_guide returns no matching guide, follow the instruction in its result: look up the screen in the client navigator, " +
+    "show the user the matching projection(s), and ask for confirmation before creating a new skill (always ask which one when there are several). " +
     "If the response contains error 'authentication_required', immediately call start_oauth — do not relay the error to the user or ask them to authenticate manually. " +
     "Targets the active IFS environment unless 'environment' is given. " +
     "If the response contains error 'no_environment_selected', do not guess — show the user the listed environments and ask which one to use, then call use_ifs_environment. " +
