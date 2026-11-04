@@ -37,3 +37,7 @@ nul
 # Deleted one-off docs
 QUICK_REPORTS_API.md
 QUICK_REPORTS_GET_ENDPOINTS.md
+
+# Plugin zip staging and output
+dist-plugin/
+*.zip
