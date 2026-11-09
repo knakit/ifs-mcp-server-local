@@ -1,6 +1,6 @@
 # IFS OData Query Reference
 
-Use this reference when constructing OData query parameters for `call_protected_api` endpoints.
+OData query syntax for IFS: $filter, $select, $orderby, $top, $expand, $count, paging and operators. Use when constructing or fixing query parameters for `call_protected_api` endpoints.
 
 > Important: IFS Cloud requires double parentheses `((...))` around filter expressions. No space after comma in function calls like `startswith(tolower(Field),'text')`.
 

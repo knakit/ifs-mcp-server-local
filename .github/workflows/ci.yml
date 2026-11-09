@@ -13,13 +13,22 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: 'npm'
+
+      - name: Check versions match
+        run: node scripts/check-versions.mjs
+
+      - name: Check client secret access is confined to the auth path
+        run: node scripts/check-secret-access.mjs
+
+      - name: Check product terminology
+        run: node scripts/check-terminology.mjs
 
       - name: Install dependencies
         run: npm ci
@@ -35,3 +44,6 @@ jobs:
 
       - name: Pack bundle (smoke test)
         run: mcpb pack .
+
+      - name: Package plugin zip (smoke test, enforces 50 MB limit)
+        run: scripts/package-plugin.sh

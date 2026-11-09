@@ -13,6 +13,14 @@ import { tools } from "../tools/index.js";
 import { getResources } from "../resources/index.js";
 import { prompts } from "../prompts/index.js";
 
+const SERVER_INSTRUCTIONS =
+  "IFS Cloud endpoints, projection names and OData syntax are customer-specific and cannot be guessed. " +
+  "Before any call_protected_api call, load the matching skill with get_api_guide (call it with no argument to list guides). " +
+  "To find which projection a screen, page or menu entry uses, load the 'ifs-framework-client-navigator' guide first. " +
+  "If no guide matches, find the projection through the navigator, show the user the hit(s), and get their confirmation " +
+  "(always when there are several hits) before building a new skill with the ifs-skill-authoring guide and save_skill. " +
+  "Never probe or invent endpoints.";
+
 export class OAuthMCPServer {
   private server: Server;
   private oauthManager: OAuthManager;
@@ -22,7 +30,7 @@ export class OAuthMCPServer {
     this.server = new Server(
       {
         name: "ifs-mcp-server",
-        version: "1.2.1",
+        version: "1.3.0",
       },
       {
         capabilities: {
@@ -30,6 +38,7 @@ export class OAuthMCPServer {
           resources: {},
           prompts: {},
         },
+        instructions: SERVER_INSTRUCTIONS,
       }
     );
 

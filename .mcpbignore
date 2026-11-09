@@ -15,3 +15,8 @@ docs/images/
 # Exclude dev/config files
 tsconfig.json
 *.log
+
+# Exclude plugin zip staging and output
+dist-plugin/
+*.zip
+scripts/

@@ -1,6 +1,7 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { OAuthManager } from "../../lib/auth/oauth-manager.js";
-import { callProtectedApi } from "../../lib/api-client.js";
+import { callProtectedApi, disallowedHeaders, ALLOWED_REQUEST_HEADERS } from "../../lib/api-client.js";
+import { loadConfig, getEnvironment } from "../../lib/config.js";
 
 export const definition: Tool = {
   name: "call_protected_api",
@@ -15,15 +16,20 @@ export const definition: Tool = {
     "Guessing them will produce 404 errors or silently return wrong data. " +
     "You MUST call get_api_guide first to get the correct endpoint and query pattern for the workflow — do not skip this step even if you think you know the endpoint. " +
     "Do NOT call $metadata, probe unknown paths, or construct endpoints from scratch. " +
-    "If get_api_guide returns no matching guide, stop and tell the user: " +
-    "'I don't have a skill for that workflow yet. Please perform this action in IFS Cloud in your browser, " +
-    "then export a HAR file from DevTools (Network tab → right-click → Save all as HAR with content) " +
-    "and use the build_ifs_skill_guide prompt to create a skill for it.' " +
+    "If get_api_guide returns no matching guide, follow the instruction in its result: look up the screen in the client navigator, " +
+    "show the user the matching projection(s), and ask for confirmation before creating a new skill (always ask which one when there are several). " +
     "If the response contains error 'authentication_required', immediately call start_oauth — do not relay the error to the user or ask them to authenticate manually. " +
-    "If no sessionId is provided, uses the most recent saved session.",
+    "Targets the active IFS environment unless 'environment' is given. " +
+    "If the response contains error 'no_environment_selected', do not guess — show the user the listed environments and ask which one to use, then call use_ifs_environment. " +
+    "Pass an If-Match header for conditional PATCH/DELETE on projections that require optimistic concurrency (check the API guide or a prior GET response's @odata.etag). " +
+    "Pass X-IFS-Content-Disposition to set the filename IFS uses for a file upload/download.",
   inputSchema: {
     type: "object",
     properties: {
+      environment: {
+        type: "string",
+        description: "Optional: name of the IFS environment to target for this one call, overriding the active selection. Omit to use the active environment.",
+      },
       sessionId: {
         type: "string",
         description: "Session ID from OAuth authentication (optional - uses saved session if not provided)",
@@ -40,6 +46,11 @@ export const definition: Tool = {
       body: {
         type: "object",
         description: "Request body (for POST/PUT/PATCH)",
+      },
+      headers: {
+        type: "object",
+        description: "Optional request headers. Only If-Match, If-None-Match (OData optimistic concurrency) and X-IFS-Content-Disposition (IFS's custom header for naming an uploaded/downloaded file) are allowed — any other header is rejected.",
+        additionalProperties: { type: "string" },
       },
     },
     required: ["endpoint", "method"],
@@ -73,11 +84,71 @@ function buildLargeResponseSummary(data: any, endpoint: string) {
   };
 }
 
+function guardError(payload: Record<string, unknown>) {
+  return {
+    content: [{ type: "text" as const, text: JSON.stringify(payload, null, 2) }],
+    isError: true,
+  };
+}
+
 export async function handler(args: any, oauthManager: OAuthManager) {
-  const { sessionId, endpoint, method, body } = args;
+  const { sessionId, endpoint, method, body, environment, headers } = args;
+
+  const badHeaders = disallowedHeaders(headers);
+  if (badHeaders.length > 0) {
+    return guardError({
+      error: "disallowed_headers",
+      message: `These headers are not allowed: ${badHeaders.join(", ")}. Only ${[...ALLOWED_REQUEST_HEADERS].join(", ")} are permitted.`,
+      disallowed: badHeaders,
+    });
+  }
+
+  const config = loadConfig();
+  const envNames = Object.keys(config.environments);
+
+  // No environments configured at all.
+  if (envNames.length === 0 && !process.env.API_BASE_URL) {
+    return guardError({
+      error: "no_environment_configured",
+      message: "No IFS environment is configured. Ask the user for their IFS Cloud URL, OAuth realm, and client ID, then call add_ifs_environment.",
+    });
+  }
+
+  // Resolve which environment this call targets.
+  const targetEnvName = environment ?? config.activeEnv;
+
+  // Prod-safety: when more than one environment exists and none is selected,
+  // refuse rather than silently defaulting (avoids accidental production hits).
+  if (!targetEnvName && envNames.length > 1) {
+    return guardError({
+      error: "no_environment_selected",
+      message: "Multiple IFS environments exist but none is selected. Ask the user which one to use, then call use_ifs_environment.",
+      environments: envNames,
+    });
+  }
+
+  if (environment && !config.environments[environment]) {
+    return guardError({
+      error: "unknown_environment",
+      message: `Environment '${environment}' is not configured.`,
+      environments: envNames,
+    });
+  }
+
+  // Read-only environments block mutating methods.
+  const targetEnv = targetEnvName ? getEnvironment(targetEnvName) : null;
+  if (targetEnv?.readOnly && method !== "GET") {
+    return guardError({
+      error: "read_only_environment",
+      message: `Environment '${targetEnvName}' is marked read-only; ${method} is blocked. Only GET requests are allowed.`,
+    });
+  }
+
+  // Per-call override is threaded through as the session key (== env name).
+  const effectiveSessionId = sessionId ?? environment;
 
   const result = await callProtectedApi(
-    { endpoint, method, sessionId, body },
+    { endpoint, method, sessionId: effectiveSessionId, body, headers },
     oauthManager
   );
 

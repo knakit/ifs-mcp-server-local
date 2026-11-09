@@ -30,7 +30,7 @@
   <rect width="860" height="510" fill="#F0F2F8" rx="14"/>
 
   <!-- ── Title ── -->
-  <text x="430" y="33" text-anchor="middle" font-size="15" font-weight="600" fill="#1C2A44" letter-spacing="0.2">IFS Cloud MCP Server — Skill Lifecycle</text>
+  <text x="430" y="33" text-anchor="middle" font-size="15" font-weight="600" fill="#1C2A44" letter-spacing="0.2">MCP Server for IFS Cloud — Skill Lifecycle</text>
 
   <!-- ══════════════════════════════════════
        CREATE SECTION  (blue family)

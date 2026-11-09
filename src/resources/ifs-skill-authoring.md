@@ -1,6 +1,6 @@
 # IFS Skill Authoring Guide
 
-How to build, format, and save IFS resource guide (skill) files.
+How to create, build, format and save a new IFS skill (resource guide) from a projection, OpenAPI spec or HAR file. Use when no existing guide covers the user's workflow.
 
 Use the `call_protected_api` tool with the endpoints below to interact with IFS Cloud.
 

@@ -1,0 +1,65 @@
+import { Tool } from "@modelcontextprotocol/sdk/types.js";
+import { listEnvironments, authModeOf, getConfigDiagnostics, clientSecretSource, clientSecretEnvVar } from "../../lib/config.js";
+import { loadSessions } from "../../lib/auth/session-manager.js";
+
+export const definition: Tool = {
+  name: "list_ifs_environments",
+  description:
+    "List all configured IFS Cloud environments, showing which one is active and whether each is currently authenticated. " +
+    "Use this to show the user their options before they choose an environment to work with.",
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: false,
+  },
+  inputSchema: {
+    type: "object",
+    properties: {},
+  },
+};
+
+export async function handler() {
+  const config = listEnvironments();
+  const sessions = loadSessions();
+  const now = Date.now();
+
+  const environments = Object.entries(config.environments).map(([name, env]) => {
+    const session = sessions.get(name);
+    let authStatus = "not_authenticated";
+    if (session) {
+      authStatus = session.expiresAt > now ? "authenticated" : "expired";
+    }
+    return {
+      name,
+      apiBaseUrl: env.apiBaseUrl,
+      oauthRealm: env.oauthRealm,
+      authMode: authModeOf(env),
+      // Where the client secret comes from ("env" | "config" | "missing") — never the value.
+      ...(authModeOf(env) === "client_credentials"
+        ? {
+            clientSecretSource: clientSecretSource(name),
+            ...(clientSecretSource(name) === "missing" ? { clientSecretEnvVar: clientSecretEnvVar(name) } : {}),
+          }
+        : {}),
+      readOnly: !!env.readOnly,
+      active: config.activeEnv === name,
+      authStatus,
+    };
+  });
+
+  return {
+    content: [
+      {
+        type: "text" as const,
+        text: JSON.stringify({
+          activeEnvironment: config.activeEnv,
+          environments,
+          diagnostics: getConfigDiagnostics(),
+          ...(environments.length === 0
+            ? { hint: "No environments configured. Use add_ifs_environment to add one. If you expected environments to already be here, check `diagnostics.configFile` above — a host that launches this process in an unexpected context (different user profile, WSL vs native Windows, etc.) can silently resolve a different config.json than the one you edited." }
+            : {}),
+        }, null, 2),
+      },
+    ],
+  };
+}

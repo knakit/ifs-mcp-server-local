@@ -13,7 +13,7 @@ This guide walks you through creating a skill from scratch — no technical know
 - Access to your IFS Cloud instance in a browser
 - **Google Chrome** or **Microsoft Edge** (recommended — both have the same developer tools)
 - Firefox also works, but the steps differ slightly
-- Claude Desktop with the IFS MCP server connected
+- Claude Desktop, Claude Code, or Codex CLI with the MCP server for IFS Cloud connected
 
 ---
 
@@ -53,7 +53,7 @@ There are two ways to build a skill. Choose the one that fits your workflow:
 ---
 
 ### Building from OpenAPI (live fetch)
-The simplest path for master data projections. Just know the projection name and use the `build_ifs_skill_from_projection` prompt. No browser recording needed.
+The simplest path for master data projections. Use the `build_ifs_skill_from_projection` prompt with the projection name and the name you want for the skill file (`skill_name`). No browser recording needed. If you don't know the projection name, just tell your agent which IFS screen you use: it finds the projection through the client navigator (the `ifs-framework-client-navigator` guide) and asks you to confirm before it builds anything.
 
 ![Buils skill from Projection name](../images/claude-create-skill-projection.gif)
 
@@ -182,7 +182,9 @@ That's your recording — a `.har` file containing everything IFS did in the bac
 | > 30 MB | Very long session or large responses | Consider re-recording more focused |
 | > 100 MB | Multiple long sessions or huge data | Break into separate recordings |
 
-> The IFS skill builder automatically ignores images, CSS, JavaScript, and non-IFS API calls — so extra noise doesn't break anything, it just slows down processing.
+> The HAR parser keeps only **successful (2xx) calls to IFS projection endpoints** (`/projection/v1/<Name>.svc/...`). Everything else is skipped and counted: images, CSS, JavaScript, other sites, failed calls, and `$metadata` and `$batch` requests. Extra noise doesn't break anything, it just slows down processing. If your IFS screens batch their requests, you may need to record the workflow again with individual calls.
+>
+> **What the summary contains:** for each operation, the entity or action name, the HTTP method, how many times it was called, the `$select` field names, the filter patterns and the request body *keys*. It never includes response data or the values in request bodies, and record keys in URL paths (such as `Customer(CustomerId='1001')`) are reduced to the entity name. Filter values are masked only partly: the string in `eq`/`ne` and `contains` filters, dates and some numbers become placeholders, while other comparisons (`ge`, `le`, `startswith`, `in`) are left as recorded. Review the draft for anything sensitive before you save it.
 
 ---
 
@@ -190,13 +192,11 @@ That's your recording — a `.har` file containing everything IFS did in the bac
 
 Now hand the HAR file to Claude.
 
-1. Open **Claude Desktop**
+1. **In Claude Desktop:** click the **+** icon (or the attachment/prompt button) in the chat input area, then select **build_ifs_skill_from_har** from the list of prompts.
+   **In Claude Code:** type `/` and pick the `build_ifs_skill_from_har` entry.
+   **In Codex CLI:** there's no prompt shortcut — just ask directly, e.g. *"call parse_har_file on this HAR file, then help me build a skill from it: C:\path\to\recording.har"*.
 
-2. Click the **+** icon (or the attachment/prompt button) in the chat input area
-
-3. Select **build_ifs_skill_from_har** from the list of prompts
-
-4. When asked, enter the **full file path** to your HAR file, for example:
+2. Fill in the two fields: **`har_file_path`**, the full path to your HAR file, and **`skill_name`**, the filename for the skill without `.md` (for example `ifs-customer-orders`). For the path, for example:
    - Windows: `C:\Users\YourName\Downloads\customer-orders.har`
    - Mac/Linux: `/Users/yourname/Downloads/customer-orders.har`
 
@@ -225,7 +225,7 @@ After the Q&A:
 
 2. Review it — check that the descriptions make sense, the examples look right, and nothing sensitive is included (real order numbers, customer IDs, etc. should be replaced with placeholders)
 
-3. Claude will ask: *"What should the filename be?"* — give it a short descriptive name, for example:
+3. The skill is saved under the `skill_name` you gave. If you worked without a prompt (for example in Codex CLI), the agent asks *"What should the filename be?"* — give it a short descriptive name, for example:
    - `ifs-customer-orders`
    - `ifs-purchase-orders`
    - `ifs-supplier-management`
@@ -236,7 +236,7 @@ After the Q&A:
 
 ## Skill File Best Practices
 
-Once created, your skill lives as a `.md` file in the server's resources folder. Here's how to keep them healthy:
+Once created, your skill lives as a `.md` file in your skills directory (the server's `resources` folder if you haven't set one). Here's how to keep them healthy:
 
 ### Size recommendations
 | Skill file size | Assessment |
@@ -260,13 +260,14 @@ Use the format `ifs-[module]-[area].md`:
 - `ifs-procurement-purchase-orders.md`
 - `ifs-procurement-supplier-invoices.md`
 - `ifs-manufacturing-work-orders.md`
-- `ifs-common-quick-reports.md`
+- `ifs-reporting-quick-reports.md`
 
-Common modules: `common`, `procurement`, `sales`, `manufacturing`, `maintenance`, `finance`, `inventory`, `projects`, `hr`
+Common modules: `common`, `framework` (used by the bundled skills), `reporting`, `procurement`, `sales`, `manufacturing`, `maintenance`, `finance`, `inventory`, `projects`, `hr`
 
 Avoid spaces and special characters. Hyphens only.
 
 ### What a good skill file contains
+- ✅ A one-line description right after the title that says when to use the skill. `get_api_guide` matches your keywords against the skill's name and this line, so a skill with a vague description may not be found
 - ✅ The base URL path for the projection
 - ✅ Each operation with a plain-language description
 - ✅ The most useful fields for `$select`
@@ -290,8 +291,9 @@ Use this approach for master data projections (customers, suppliers, parts) wher
 
 You just need to know the projection service name. Claude fetches the spec using your active IFS session.
 
-1. Open **Claude Desktop** (make sure you are authenticated to IFS — run `get_session_info` to check)
-2. Click the **+** icon and select **build_ifs_skill_from_projection** from the prompt list
+1. Make sure you're authenticated to IFS — run `get_session_info` to check
+2. **In Claude Desktop:** click the **+** icon and select **build_ifs_skill_from_projection** from the prompt list.
+   **In Claude Code:** type `/` and pick the `build_ifs_skill_from_projection` entry.
 3. In the **`projection_name`** field, enter the service name — for example:
    - `CustomerHandling`
    - `SupplierHandling`
@@ -312,7 +314,7 @@ If you prefer to inspect the spec first or work offline:
    https://your-instance.ifs.cloud/main/ifsapplications/projection/v1/CustomerHandling.svc/$openapi?V2
    ```
 3. Save the page as a `.json` file (in Chrome: **Ctrl+S**, save as *Webpage, Single File* or use the browser's save option for plain text)
-4. In Claude Desktop, select **build_ifs_skill_from_openapi** and provide the file path in the **`openapi_file_path`** field
+4. **In Claude Desktop:** select **build_ifs_skill_from_openapi** from the prompt list. **In Claude Code:** type `/` and pick the `build_ifs_skill_from_openapi` entry. Either way, provide the file path in the **`openapi_file_path`** field
 5. Claude parses the file and proceeds as in Option A
 
 ### What the OpenAPI workflow covers
@@ -335,8 +337,8 @@ If IFS changes or you discover better patterns, you can update a skill:
 
 1. Run the appropriate prompt again (`build_ifs_skill_from_projection`, `build_ifs_skill_from_har`, or `build_ifs_skill_from_openapi`)
 2. When asked for the filename, use the **same name as the existing skill**
-3. Claude will show you a summary of what changed (sections added, fields updated, examples modified)
-4. The update is saved immediately
+3. The agent shows a summary of what changed (sections, field names and examples added or removed, or how much the file grew or shrank)
+4. The update **overwrites the file immediately**, with no backup. Keep your skills folder in version control (or keep a copy) if you want to roll back
 
 ---
 
@@ -350,7 +352,7 @@ The [ifs-mcp-skills](https://github.com/knakit/ifs-mcp-skills) repository is the
 
 To import a skill directly from the repository:
 ```
-import_skill({ source: "https://raw.githubusercontent.com/knakit/ifs-mcp-skills/main/ifs-sales-customers.md" })
+import_skill({ source: "https://raw.githubusercontent.com/knakit/ifs-mcp-skills/main/skills/ifs-reporting-quick-reports.md" })
 ```
 The skill is available immediately after import — no restart needed.
 
@@ -364,30 +366,29 @@ To contribute a skill to the community repository, open a pull request at [githu
 
 ### Skills work across dev and prod
 
-If you're running both a dev and a production environment (see [Configuration](../getting-started/CONFIGURATION.md)), point both server registrations to the same `SKILLS_DIR`. Skills you create or import are instantly available in both environments — you only need to build and maintain one set of skills.
+Skills aren't tied to any one IFS instance — the same `.md` file works against every environment you've registered (see [Managing IFS Environments](../getting-started/ENVIRONMENTS.md)), since `get_api_guide` reads from one shared skills folder regardless of which environment is active. Build and maintain one set of skills, then just switch environments as needed:
 
-When using a skill against a specific environment, just tell Claude which server to use:
-- *"Using ifs-dev, check if customer order 100012 is released"*
-- *"Using ifs-prod, export all open purchase orders to CSV"*
+- *"Switch to dev, then check if customer order 100012 is released"* — calls `use_ifs_environment` first
+- *"Using prod as a one-off, export all open purchase orders to CSV"* — pass `environment: "prod"` directly to `export_api_data` without changing the active environment
 
 ---
 
 ## Troubleshooting
 
-**"No IFS API operations found in the HAR file"**
-The recording didn't capture IFS projection API calls. Make sure you:
+**The summary says "Found 0 distinct IFS API operation(s)"**
+The recording didn't capture successful IFS projection API calls. Make sure you:
 - Were logged in to IFS Cloud (not just the login page)
 - Actually performed actions (not just loaded a page)
 - The Network tab was recording (red dot was active)
 
-**"HAR file too large to process"**
-Re-record with a more focused workflow. Clear the network log first, do only the specific actions, and export immediately.
+**"Failed to parse HAR file"** (or the recording is very large)
+The whole file is read into memory, so re-record with a more focused workflow. Clear the network log first, do only the specific actions, and export immediately.
 
 **"The skill doesn't seem to know about field X"**
 The field wasn't in your recording's `$select` list. Re-record the workflow and make sure the IFS screen is showing that field (IFS only returns selected fields in API responses).
 
-**"Claude is still guessing at endpoints even with the skill"**
-Make sure you're using `get_api_guide` to load the skill first. Claude doesn't automatically read skills — it needs to be told which guide to consult.
+**"The agent is still guessing at endpoints even with the skill"**
+Make sure the skill was actually loaded: ask the agent to call `get_api_guide` for it. The agent finds guides by matching keywords against each guide's name and its first description line, so check that line mentions the screen or topic. If nothing matches, the agent should look the screen up in the navigator and ask before building a new skill.
 
 **"The HAR file path isn't working"**
 Use the full absolute path with no quotes:
@@ -398,11 +399,11 @@ Use the full absolute path with no quotes:
 **"Live fetch says I'm not authenticated"**
 Run `get_session_info` first. If it shows no active session, run `start_oauth` to authenticate, then retry `build_ifs_skill_from_projection`.
 
-**"The OpenAPI spec file failed to parse"**
+**"Failed to read OpenAPI file"**
 Make sure the file is a valid JSON file (not HTML). When saving from a browser, use the browser's raw text option or copy-paste the JSON content into a `.json` file. The spec must be Swagger 2.0 or OpenAPI 3.0 JSON format.
 
 **"The projection name doesn't look right"**
-Check the URL in browser DevTools when using that IFS screen. It will contain something like `/projection/v1/CustomerHandling.svc/` — the part before `.svc` is the projection name to use.
+Ask your agent which projection a screen uses (it looks it up in the client navigator), or check the URL in browser DevTools when using that IFS screen. It will contain something like `/projection/v1/CustomerHandling.svc/` — the part before `.svc` is the projection name to use.
 
 ---
 

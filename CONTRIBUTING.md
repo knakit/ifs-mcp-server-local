@@ -94,16 +94,15 @@ OAUTH_CLIENT_ID=your-client-id
 
 **3. Build**
 ```bash
-# Windows
-npx tsc
-
-# macOS / Linux
 npm run build
 ```
+(Runs `tsc` plus a resource-copy step. Bare `tsc`/`npx tsc` skips that copy, so `.md` files under `src/resources/` won't reach `build/resources/`.)
 
-**4. Add to Claude Desktop**
+**4. Connect it to a client to test against**
 
-Edit `claude_desktop_config.json`:
+Pick whichever host you're testing changes for — both run the same `build/index.js` you just built.
+
+**Claude Desktop** — edit `claude_desktop_config.json`:
 - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Linux:** `~/.config/Claude/claude_desktop_config.json`
@@ -136,11 +135,31 @@ You can also pass environment variables directly in the config instead of using 
 }
 ```
 
+**Claude Code** — the repo already ships `.mcp.json` and `.claude-plugin/`, so no manual config file editing is needed:
+
+```bash
+cd ifs-mcp-server-local
+claude --plugin-dir . --mcp-config .\.mcp.json   # session-only, run /reload-plugins after edits
+```
+(`--mcp-config` is required alongside `--plugin-dir` — see [anthropics/claude-code#15308](https://github.com/anthropics/claude-code/issues/15308).) For a persistent install instead: `claude plugin marketplace add .` then `claude plugin install ifs-mcp-server@ifs-local`.
+
+**Codex CLI** — no packaging involved, just a direct registration:
+```bash
+codex mcp add ifs -- node /absolute/path/to/ifs-mcp-server-local/build/index.js
+```
+Re-run after rebuilding — Codex doesn't hot-reload a changed binary path.
+
 ### Before submitting a PR
 
-- [ ] `npx tsc` compiles without errors
+- [ ] `npm run build` compiles without errors (bare `tsc` skips the resource copy)
+- [ ] `node scripts/check-versions.mjs`, `node scripts/check-secret-access.mjs` and `node scripts/check-terminology.mjs` pass (CI runs all three)
 - [ ] Existing skills in `src/resources/` still load correctly
 - [ ] No secrets or credentials in any committed file
+- [ ] The product is named "MCP Server for IFS Cloud" in docs and strings (the terminology check fails on "IFS MCP Server" and "IFS Cloud MCP Server"; add `terminology-ok` to a line to allow a deliberate exception)
+
+### Checks and releases
+
+There are no automated tests yet (`npm test` is a placeholder), so the CI checks above, `mcpb validate .` / `mcpb pack .` and `scripts/package-plugin.sh` (run `npm run build` first; it needs bash plus `zip` or Python, and fails if the zip exceeds 50 MB) are the real gate. Pushing a `v*` tag runs `release.yml`, which verifies the version matches the tag, then attaches the `.mcpb` and the plugin zip to a GitHub release.
 
 ---
 
