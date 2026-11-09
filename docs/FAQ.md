@@ -1,9 +1,10 @@
 # FAQ
 
-> **Draft.** Items marked **[verify]** have not been confirmed yet.
+> **Draft.** Items marked **[verify]** have not been confirmed yet. Statements about how your AI agent or its model provider behaves depend on the host and are noted as such.
 
 - [Data flow and privacy](#data-flow-and-privacy)
 - [Setup and cleanup](#setup-and-cleanup)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -23,13 +24,13 @@ The MCP Server for IFS Cloud runs on your machine. It sits between two other par
 
 1. **Server ↔ IFS Cloud.** The server authenticates (OAuth 2.0) and calls the IFS APIs. This is the only place it sends requests for your data, apart from `import_skill`, which fetches the URL you give it.
 2. **Server → MCP host.** Whatever a tool *returns* goes to the host as a tool result and becomes part of the conversation.
-3. **Host → AI model provider.** The host sends the conversation to the model so it can answer. **This server does not control this step.** In most hosts the model provider is a cloud service. A host configured with a local model keeps it on your machine.
+3. **Host → AI model provider.** The host sends the conversation to the model so it can answer. **This server does not control this step.** In most hosts the model provider is a cloud service (this depends on your host and how you configured it). A host configured with a local model keeps it on your machine.
 
 The server itself sends nothing to its developer and has no telemetry. What reaches the AI model is decided by *what the tools return* (step 2) and by your host and provider (step 3).
 
 ### When does IFS data reach the AI model?
 
-Anything that appears in the conversation is sent to the model, and in most hosts it is sent again on later turns while it stays in the conversation history. This table shows what each action puts into the conversation.
+Anything that appears in the conversation is sent to the model. Most hosts send the whole conversation again on later turns while it stays in the history, but that is up to your host. This table shows what each action puts into the conversation.
 
 | What happens | What the model sees | What stays local |
 |---|---|---|
@@ -53,7 +54,7 @@ Anything that appears in the conversation is sent to the model, and in most host
 
 ### Does the model send anything to IFS by itself?
 
-The model decides which tool to call and with which parameters, but the server executes them. Calls are made as the logged-in IFS user (or the service account for `client_credentials`), so IFS permissions apply. For environments marked `readOnly`, the server blocks every method except GET, in both `call_protected_api` and `export_api_data`. That flag is a guard rail rather than a hard boundary (an agent that can call `add_ifs_environment` could change it), so for a hard limit give the IFS user only read permission sets. Review any create, update or delete request before approving it in your host.
+The model decides which tool to call and with which parameters, but the server executes them. Calls are made as the logged-in IFS user (or the service account for `client_credentials`), so IFS permissions apply. For environments marked `readOnly`, the server blocks every method except GET, in both `call_protected_api` and `export_api_data`. That flag is a guard rail rather than a hard boundary (an agent that can call `add_ifs_environment` could change it), so for a hard limit give the IFS user only read permission sets. If your host asks you to approve tool calls, review any create, update or delete request before approving it (whether and how it asks depends on the host and its settings).
 
 ### How can I limit what reaches the AI model?
 
@@ -72,23 +73,35 @@ See [PRIVACY.md](../PRIVACY.md) for the full table: OAuth tokens in `~/.ifs-mcp/
 ## Setup and cleanup
 
 ### Why is `~/.ifs-mcp` still there after I uninstall?
-Uninstalling the extension or plugin removes only its own files. `~/.ifs-mcp` is created by the server at runtime, outside the plugin folder, and is shared by every host, so no single uninstall clears it. There is no uninstall hook.
+Uninstalling the extension or plugin removes only its own files, as far as we know (this depends on how each host handles uninstall). `~/.ifs-mcp` is created by the server at runtime, outside the plugin folder, and is shared by every host, so no single uninstall clears it, and the server has no uninstall hook of its own.
 
-It can contain: `config.json` (environments, and a client secret if you added one), `session.json` (OAuth tokens) and `exports/` (CSVs, only used when `~/Downloads` doesn't exist). Older versions may also have left `session.backup-*.json` files or a `skills/` folder, so check before deleting. Skills are not stored here: they live in your `SKILLS_DIR`, or inside the extension or plugin's own `build/resources` folder, which an uninstall removes. A temporary login page is also written to your system temp folder under `ifs-mcp/`.
+It can contain: `config.json` (environments, and a client secret if you added one), `session.json` (OAuth tokens) and `exports/` (CSVs, only used when `~/Downloads` doesn't exist). This version does not create `session.backup-*.json` files or a `skills/` folder. If you find them, something else put them there, so check before deleting. Skills are not stored here: they live in your `SKILLS_DIR`, or inside the extension or plugin's own `build/resources` folder, which is removed when the host removes the extension or plugin. A temporary login page is also written to your system temp folder under `ifs-mcp/`.
 
 To clean up, delete `config.json` and `session.json` to remove credentials and tokens, or remove the whole folder. After removal, rotate any client secret that was stored there or pasted into a chat. Deleting the files does not revoke tokens IFS has already issued; see [Security](../SECURITY.md#protect-your-session-file).
 
 On Windows the `0600` file permission mentioned in the privacy and security documents does not restrict access, because Node's `chmod` doesn't set Windows permissions. Protect the folder with ordinary account permissions.
 
 ### Why is my IFS client ID rejected?
-IFS limits client and user IDs to 20 characters. Use short names such as `ifs-mcp` (public client) and `ifs-mcp-service` (confidential client).
+IFS IAM limits client and user IDs to 20 characters (confirmed in IAM; check the limit for your IFS version). Use short names such as `ifs-mcp` (public client) and `ifs-mcp-service` (confidential client).
 
 ### Why does Cowork warn "This plugin includes local MCP servers"?
 Cowork shows this for any plugin that launches a local command; this plugin runs `node build/index.js`. It is a trust prompt, not an error. Install only from the official release. **[verify]** Whether the server runs on your computer or in a VM in Cowork.
 
-### Still to write
-- Port 3000 conflicts when two logins overlap
-- The `API_BASE_URL` environment variable overriding the environment registry
-- The "which environment?" refusal when several are registered
-- A service user with no permission sets
-- `diagnostics` showing a different home directory (WSL versus native Windows)
+---
+
+## Troubleshooting
+
+### Login says the callback port is in use, or the wrong window gets the login
+Browser login uses a small local server on `127.0.0.1:3000`. It starts the first time a login is needed and keeps listening until your host stops the server. If a second host or session starts its own server, the second one cannot bind the port, and the server ignores that silently, so the browser redirect can land on the first instance. Close the extra host or session (or restart the host) and log in again. `client_credentials` environments don't use this server at all.
+
+### I set `API_BASE_URL` but the server uses a different URL
+`API_BASE_URL`, `OAUTH_REALM` and `OAUTH_CLIENT_ID` take precedence for the browser login, but once an environment is registered and active, token requests and API calls use that environment's own URL. Mixing the two can send login and API calls to different places. Use one mechanism per setup; see [Two ways to configure](getting-started/ENVIRONMENTS.md#two-ways-to-configure--dont-mix-them). Claude Desktop always sets the variables, because its URL, realm and client ID fields are required.
+
+### The agent says "which environment?" and won't continue
+When more than one environment is registered and none is active, the tools refuse to guess, so a call can't accidentally hit production. Ask the agent to list your environments and pick one (`list_ifs_environments`, then `use_ifs_environment`). You can also name one for a single call with the `environment` argument. See [Managing IFS Environments](getting-started/ENVIRONMENTS.md).
+
+### Login works, but every call fails or keeps asking me to log in again
+For a `client_credentials` environment the cause is usually a service user with **no permission sets**: authentication succeeds, but IFS answers each call with a permission error. The server turns any 401 or 403 into "authentication required", so the agent may keep trying to log in. Check in IFS that the service user has the permission sets for the projections you call (see [Installation, Step 1 Option B](getting-started/INSTALLATION.md#option-b--confidential-client-for-headless-auth-client_credentials)). If you see `read_only_environment`, the environment is marked read-only and the call was a write.
+
+### The server can't see environments I registered
+Each host process reads `~/.ifs-mcp` under its own home directory. A host running inside WSL, a container or another user account has a different home directory from one on native Windows, so it sees a different `config.json` and `session.json`. Ask the agent to run `list_ifs_environments`: its `diagnostics` shows the `homeDir` and `configFile` that process is actually reading. Register the environment again from that host, or point both at the same place.
