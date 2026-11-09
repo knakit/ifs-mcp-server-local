@@ -40,7 +40,7 @@ export const definition: Tool = {
       },
       readOnly: {
         type: "boolean",
-        description: "Optional. When true, call_protected_api blocks non-GET methods for this environment (recommended for production).",
+        description: "Optional. When true, every API tool (call_protected_api and export_api_data) blocks non-GET methods for this environment (recommended for production). When updating an existing environment, omit it to keep the current setting; pass false only if the user asked to allow writes.",
       },
     },
     required: ["name", "apiBaseUrl", "oauthRealm", "oauthClientId"],
@@ -83,7 +83,7 @@ export async function handler(args: any) {
     return error("authMode must be 'authorization_code' or 'client_credentials'.");
   }
 
-  const config = addEnvironment(name, { apiBaseUrl, oauthRealm, oauthClientId, authMode, readOnly: !!readOnly });
+  const config = addEnvironment(name, { apiBaseUrl, oauthRealm, oauthClientId, authMode, readOnly: typeof readOnly === "boolean" ? readOnly : undefined });
   const isClientCreds = authMode === "client_credentials";
   const isActive = config.activeEnv === name;
 

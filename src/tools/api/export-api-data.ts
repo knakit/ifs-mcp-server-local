@@ -118,7 +118,9 @@ export async function handler(args: any, oauthManager: OAuthManager) {
   fs.mkdirSync(exportDir, { recursive: true });
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  const outputPath = path.join(exportDir, `${filename}_${timestamp}.csv`);
+  // The filename comes from the model: keep it to a plain file name so it cannot point outside the export folder.
+  const safeName = String(filename).replace(/[^A-Za-z0-9._-]/g, "_").replace(/^\.+/, "") || "export";
+  const outputPath = path.join(exportDir, `${safeName}_${timestamp}.csv`);
 
   const baseEndpoint = stripPaginationParams(endpoint);
   let allRecords: any[] = [];

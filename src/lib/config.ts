@@ -141,12 +141,15 @@ export function listEnvironments(): IfsConfig {
 export function addEnvironment(name: string, env: IfsEnvironment): IfsConfig {
   const stored = readStoredConfig();
   const existingSecret = stored.environments[name]?.clientSecret;
+  // Updating an environment keeps its read-only flag unless the caller states it explicitly
+  // (true or false). Omitting it must never silently switch read-only protection off.
+  const readOnly = env.readOnly !== undefined ? env.readOnly : stored.environments[name]?.readOnly;
   stored.environments[name] = {
     apiBaseUrl: env.apiBaseUrl.replace(/\/+$/, ""),
     oauthRealm: env.oauthRealm,
     oauthClientId: env.oauthClientId,
     ...(env.authMode === "client_credentials" ? { authMode: "client_credentials" as const } : {}),
-    ...(env.readOnly ? { readOnly: true } : {}),
+    ...(readOnly ? { readOnly: true } : {}),
     ...(existingSecret ? { clientSecret: existingSecret } : {}),
   };
   // First environment added becomes active automatically.
