@@ -2,7 +2,7 @@
 
 An **environment** is a named IFS Cloud instance — its URL, OAuth realm, client ID, and how it authenticates. Most setups only ever need one (e.g. `prod`), but you can register several — `dev`, `test`, `prod` — and switch between them without restarting anything.
 
-This is the only configuration mechanism available in **Claude Code** and **Codex CLI**, since neither has a settings dialog. In **Claude Desktop**, it's an alternative to the classic single-environment settings screen — use whichever fits your setup.
+This is the only configuration mechanism available in **Claude Code** and **Codex CLI**, since neither has a settings dialog. In **Claude Desktop**, the extension's settings form (URL, realm, client ID) feeds the legacy variables described below, and the registry adds more instances on top of it.
 
 ---
 
@@ -13,7 +13,9 @@ This is the only configuration mechanism available in **Claude Code** and **Code
 | **Environment variables** (legacy) | `.env` file, or Desktop's Settings → Extensions dialog | One | `authorization_code` only |
 | **Environment registry** (this page) | `~/.ifs-mcp/config.json` | Any number, named | `authorization_code` or `client_credentials` |
 
-**If `API_BASE_URL` is set as an environment variable, it always wins** — the registry is ignored entirely, even if you've added environments to it. This exists so existing `.mcpb`/CI setups keep working unchanged. If you want to use the registry, make sure `API_BASE_URL` isn't set anywhere the server can see it (unset it from Desktop's extension settings, or don't set it in `.env`).
+**The legacy variables take precedence where the server reads them.** If `API_BASE_URL` is set, the browser login URL, realm and client ID come from the variables. Once an environment is registered and active, token requests and API calls still use that environment's own URL, and its guard rails (the read-only flag and the "which environment?" refusal) apply. Mixing the two can therefore point login and API calls at different places, so use one mechanism per setup: leave the variables unset and register environments (Claude Code, Codex CLI), or use only the variables (a single instance).
+
+In Claude Desktop the extension's URL, realm and client ID fields are required, so the variables are always set there. Use the Desktop form for one instance, and use Claude Code or Codex CLI if you need several.
 
 ---
 
@@ -34,8 +36,16 @@ The **first environment you add becomes active automatically**. Add more the sam
 | `oauthRealm` | Yes | The OAuth realm (Solution Manager → Setup → System Parameters → Namespace) |
 | `oauthClientId` | Yes | A public client ID for `authorization_code`, or a confidential client ID for `client_credentials` |
 | `authMode` | No — defaults to `authorization_code` | See below |
-| `clientSecret` | Only for `client_credentials` | The confidential client's secret |
-| `readOnly` | No | When `true`, blocks all non-`GET` calls against this environment |
+| `readOnly` | No | When `true`, blocks all non-`GET` calls against this environment, in every API tool (`call_protected_api` and `export_api_data`). Re-running `add_ifs_environment` keeps the current setting unless you pass `readOnly` explicitly (`false` turns it off) |
+
+### Supplying the client secret (`client_credentials` only)
+
+The client secret is **never a tool input**. `add_ifs_environment` takes no secret and refuses one if it is passed, so it never passes through the chat. You supply it yourself, in one of two ways:
+
+- **Environment variable (preferred):** set `IFS_CLIENT_SECRET_<NAME>` before your host starts. `<NAME>` is the environment name in upper case with every other character replaced by `_` (`prod-ci` becomes `IFS_CLIENT_SECRET_PROD_CI`). Nothing is written to disk.
+- **`config.json`:** add `"clientSecret": "..."` inside the environment's entry in `~/.ifs-mcp/config.json`. It is stored in plaintext. Changes take effect on the next call; no restart needed.
+
+After adding the environment, `list_ifs_environments` shows where each secret comes from (`env`, `config` or `missing`), never its value.
 
 ---
 
@@ -47,7 +57,7 @@ The **first environment you add becomes active automatically**. Add more the sam
 | **Needs** | A public OAuth client, a browser, `localhost:3000` reachable | A confidential OAuth client + secret |
 | **Runs as** | The IFS user account that logs in | The integration/service account tied to the client |
 | **Works headless** (Claude Cowork, CI, no display) | No | Yes |
-| **Where the secret lives** | Nowhere — PKCE needs no secret | `~/.ifs-mcp/config.json`, plaintext, `0600` — see [Security](../../SECURITY.md#if-you-use-client_credentials-environments) |
+| **Where the secret lives** | Nowhere — PKCE needs no secret | Where you put it, outside chat: the `IFS_CLIENT_SECRET_<NAME>` environment variable, or a `clientSecret` entry you add to `~/.ifs-mcp/config.json` (plaintext) — see [Security](../../SECURITY.md#if-you-use-client_credentials-environments) |
 
 Default to `authorization_code` whenever a person is actually present to click through a login. Reach for `client_credentials` only when there's no browser available — that's the entire reason it exists.
 

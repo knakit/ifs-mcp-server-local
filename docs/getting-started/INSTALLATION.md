@@ -36,13 +36,14 @@ The default mode. A person logs in through a browser, so no client secret is sto
 Only needed if you'll register an environment with `authMode: "client_credentials"` — no browser involved, so this is what makes headless/automated use (including Claude Cowork) possible. Skip this unless you specifically need it.
 
 1. Click **New** to open the Create New Client dialog
-2. Enter a **Client ID** (e.g. `ifs-mcp-server-service`) and a description
+2. Enter a **Client ID** (e.g. `ifs-mcp-service`; IFS limits client IDs to 20 characters) and a description
 3. Toggle **Enabled** ON
 4. Leave **Public Client** OFF and **Direct Access Grants** OFF
 5. Toggle **Service Accounts** ON — this is the key setting; it's what enables the `client_credentials` grant
 6. No **Redirect Uri** is needed — this client never sends a browser through a login page
 7. Under **Service Account User**, toggle both **Create IFS Service User** and **Activate IFS Service User** ON — IFS creates a dedicated user for this client to act as
 8. Click **OK** to save, then **copy the generated Client Secret immediately** — some IAM screens only display it once
+9. Keep the secret out of chat: you will supply it yourself as the `IFS_CLIENT_SECRET_<NAME>` environment variable, or in `config.json`, after registering the environment. See [Supplying the client secret](ENVIRONMENTS.md#supplying-the-client-secret-client_credentials-only)
 
 ![IFS IAM Client Setup — Service Account](../images/ifs-iam-client-setup-service.png)
 
@@ -62,7 +63,7 @@ Same server every time — pick the option that matches your host.
 
 ### Option A — Claude Desktop
 
-Download the latest `ifs-mcp-server.mcpb` from the [GitHub Releases](https://github.com/knakit/ifs-mcp-server-local/releases) page.
+Download the latest `ifs-mcp-server-<version>.mcpb` from the [GitHub Releases](https://github.com/knakit/ifs-mcp-server-local/releases) page.
 
 1. Open **Claude Desktop**
 2. Go to **Settings → Extensions → Advanced settings**
@@ -73,7 +74,7 @@ Download the latest `ifs-mcp-server.mcpb` from the [GitHub Releases](https://git
    - **OAuth Client ID** — The client ID from Step 1
 5. Click **Install**
 
-![Installing IFS MCP Server in Claude Desktop](../images/clade-desktop-install-ifs-mcpb.gif)
+![Installing MCP Server for IFS Cloud in Claude Desktop](../images/clade-desktop-install-ifs-mcpb.gif)
 
 > **Optional:** Set the **Skills Directory** to keep skills in a separate folder (e.g. a shared git repo). See [CONFIGURATION.md](CONFIGURATION.md) for details.
 
@@ -81,7 +82,7 @@ Download the latest `ifs-mcp-server.mcpb` from the [GitHub Releases](https://git
 
 There's no settings dialog for a Code plugin, so the IFS URL/realm/client ID from Step 1 are registered as a named **environment** through chat instead of a form.
 
-1. Clone this repo, then `npm install && npm run build`
+1. Clone this repo, then `npm install && npm run build` (the build output isn't in git, and the plugin runs `build/index.js`, so a plugin update from your clone also needs a rebuild)
 2. Add it as a plugin marketplace and install it:
    ```
    claude plugin marketplace add /path/to/ifs-mcp-server-local
@@ -109,16 +110,18 @@ Codex has no plugin/marketplace layer — it's a direct MCP server registration,
 
 ## Step 4 — Authenticate
 
-1. In Claude Desktop, ask Claude to login to IFS. *(Yes, it's that simple!)*
+1. Ask your AI agent to log in to IFS. *(Yes, it's that simple!)*
 2. A browser window opens — log in with your IFS Cloud credentials
 3. After successful login, the browser shows a confirmation and you can close it.
-4. Say ```done``` or something similar to let Claude know you have completed the login.
+4. Say ```done``` or something similar to let your agent know you have completed the login.
+
+> Environments set up for `client_credentials` need no browser: the token is fetched silently on the first call (or when you ask the agent to log in). The client secret must already be supplied, see [Managing IFS Environments](ENVIRONMENTS.md#supplying-the-client-secret-client_credentials-only).
 
 **Verify it worked:**
 
-Ask Claude: *Check the IFS session status*
+Ask your agent: *Check the IFS session status*
 
-Claude will show the session information and the status.
+It will show the session information and the status.
 
 ---
 

@@ -151,9 +151,15 @@ Re-run after rebuilding — Codex doesn't hot-reload a changed binary path.
 
 ### Before submitting a PR
 
-- [ ] `npx tsc` compiles without errors
+- [ ] `npm run build` compiles without errors (bare `tsc` skips the resource copy)
+- [ ] `node scripts/check-versions.mjs`, `node scripts/check-secret-access.mjs` and `node scripts/check-terminology.mjs` pass (CI runs all three)
 - [ ] Existing skills in `src/resources/` still load correctly
 - [ ] No secrets or credentials in any committed file
+- [ ] The product is named "MCP Server for IFS Cloud" in docs and strings (the terminology check fails on "IFS MCP Server" and "IFS Cloud MCP Server"; add `terminology-ok` to a line to allow a deliberate exception)
+
+### Checks and releases
+
+There are no automated tests yet (`npm test` is a placeholder), so the CI checks above, `mcpb validate .` / `mcpb pack .` and `scripts/package-plugin.sh` (run `npm run build` first; it needs bash plus `zip` or Python, and fails if the zip exceeds 50 MB) are the real gate. Pushing a `v*` tag runs `release.yml`, which verifies the version matches the tag, then attaches the `.mcpb` and the plugin zip to a GitHub release.
 
 ---
 

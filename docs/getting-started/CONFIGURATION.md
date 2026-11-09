@@ -12,7 +12,7 @@ To keep your skills permanently, set the Skills Directory to a folder on your ma
 
 **How to set it — Claude Desktop:**
 
-1. Go to **Settings → Extensions → IFS Cloud MCP Server**
+1. Go to **Settings → Extensions → MCP Server for IFS Cloud**
 2. Set **Skills Directory** to an absolute path, for example:
    - Windows: `C:\Users\you\Documents\ifs-skills`
    - macOS: `/Users/you/Documents/ifs-skills`
@@ -20,15 +20,12 @@ To keep your skills permanently, set the Skills Directory to a folder on your ma
 
 **How to set it — Claude Code:**
 
-There's no settings dialog, so set the `SKILLS_DIR` environment variable before launching `claude` (e.g. in your shell profile), or add it to the `env` block of the server entry in `.mcp.json`:
-```json
-{ "mcpServers": { "ifs": { "command": "node", "args": ["${CLAUDE_PLUGIN_ROOT}/build/index.js"], "env": { "SKILLS_DIR": "C:\\Users\\you\\Documents\\ifs-skills" } } } }
-```
+There's no settings dialog, so set the `SKILLS_DIR` environment variable before launching `claude` (e.g. in your shell profile). Don't rely on editing the plugin's own `.mcp.json`: a plugin update replaces it.
 
 **What changes when it's set:**
 
 - `save_skill` and `import_skill` write to your folder instead of inside the bundle
-- `get_api_guide` scans both your folder and the built-in resources — the bundled OData reference remains available
+- `get_api_guide` scans both your folder and the built-in resources — the bundled guides (client navigator, quick reports, OData reference, skill authoring) remain available
 - Skills in your folder take precedence over same-named built-in files
 - You can version-control or share the folder across your team
 
